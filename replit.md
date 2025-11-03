@@ -20,19 +20,35 @@ I want to use iterative development, with a focus on completing each module end-
 The portal adheres to Material Design principles, utilizing the Roboto font family. It features a professional B2B aesthetic, information-dense interfaces, consistent spacing, and an accessibility-first approach.
 
 ### Core Features and Implementations
+
+#### Module 1-2: Database & Authentication (Completed)
 -   **Database Schema:** Comprehensive schema including `users`, `suppliers`, `quote_requests`, `request_suppliers`, and `supplier_quotes` tables with defined enums and relationships. Material details are embedded directly in `quote_requests`.
 -   **Authentication & User Management:** Dual authentication (Replit Auth and local username/password for admin testing), role-based access control (Admin, Supplier, Procurement), protected routes, and an Admin User Management interface. Includes robust security features like bcrypt hashing, rate limiting, and email normalization.
--   **Supplier Management:** CRUD operations for suppliers with API routes and a UI for listing and managing suppliers.
+
+#### Module 3: Supplier Management (Completed)
+-   CRUD operations for suppliers with API routes and a UI for listing and managing suppliers.
+
+#### Module 4-5: Quote Request Workflow (Completed)
 -   **Quote Request Creation:** A 4-step multi-step wizard for creating quote requests, including material details, specifications, supplier selection, and review. Features draft saving, auto-generated RFQ numbers (RFQ-YYYY-XXXXX), and date handling.
 -   **Email Notifications:** A mock email service with professional HTML templates for RFQ notifications, sending emails to selected suppliers with token-based authentication links for quote submission. Includes a secure 64-character random access token system with 30-day expiration.
--   **Supplier Quote Submission:** A public, token-based interface for suppliers to submit quotes without requiring a login. It displays quote request details and includes a form for price, lead time, and other quote specifics, with backend validation.
+
+#### Module 6: Supplier Quote Submission (Completed)
+-   **Public Quote Submission Interface:** A token-based public page at `/quote-submission/:id?token=xxx` that allows suppliers to submit quotes without login. Features:
+    -   Token validation middleware with automatic expiration checking (30-day validity)
+    -   Quote request details display (material, quantity, specifications, deadline)
+    -   Quote submission form with fields: price per unit, lead time, MOQ, payment terms, additional notes
+    -   Currency support (AUD default)
+    -   Success page with confirmation message
+    -   Fully tested end-to-end workflow with E2E tests
+-   **Critical Technical Fix:** Resolved frontend routing issue where wouter's `useLocation()` only returns pathname. Fixed by using `window.location.search` for query parameter extraction, enabling proper token validation on public routes.
 
 ### System Design Choices
 -   **Modular Development:** The project is built in modular phases, ensuring each feature set is complete and testable.
 -   **Role-Based Access Control (RBAC):** Granular permissions for Admin, Supplier, and Procurement roles.
--   **Token-Based Supplier Access:** Enables frictionless quote submission for suppliers without requiring traditional login.
--   **Auto-generated RFQ Numbers:** Consistent and trackable request numbering.
+-   **Token-Based Supplier Access:** Enables frictionless quote submission for suppliers without requiring traditional login. Uses 64-character cryptographically random tokens with 30-day expiration.
+-   **Auto-generated RFQ Numbers:** Consistent and trackable request numbering (format: RFQ-YYYY-XXXXX).
 -   **Data Validation:** Extensive use of Zod for schema validation on the backend.
+-   **Public vs Authenticated Routes:** Separate routing structure to render public pages (quote submission) without authentication layouts, while maintaining secure authenticated routes for internal users.
 
 ## External Dependencies
 -   **PostgreSQL (Neon):** Primary database for data persistence.

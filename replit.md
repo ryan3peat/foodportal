@@ -45,7 +45,11 @@ A comprehensive B2B supplier portal for Essential Flavours, an Australian flavou
 
 **Implemented:**
 - Landing page for logged-out users with professional design following Material Design guidelines
-- Replit Auth integration (OpenID Connect) with login button
+- **Dual Authentication System:**
+  - **Replit Auth (OIDC)**: Primary authentication for production use
+  - **Local Username/Password**: Added for admin testing purposes (ryan@essentialflavours.com.au is a Microsoft account)
+  - Seamless session management supporting both authentication methods
+  - Admin allowlist for local auth (only specific emails can use password login)
 - Role-based authentication and routing:
   - Admin/Procurement → Admin Dashboard
   - Supplier → Supplier Dashboard
@@ -69,6 +73,20 @@ A comprehensive B2B supplier portal for Essential Flavours, an Australian flavou
 - Role-based access control (RBAC)
 - Protected API routes with authorization checks
 - Token-based supplier access for frictionless quote submission
+- **Password Security:**
+  - bcrypt hashing with cost factor 12
+  - Secure password storage (passwordHash never exposed in API responses)
+  - Password set date tracking (passwordSetAt field)
+- **Account Protection:**
+  - Rate limiting: 5 failed login attempts trigger 15-minute lockout
+  - Email normalization (lowercase + trim) to prevent case-sensitive bypass
+  - Exponential backoff on failed attempts
+  - Audit logging for all authentication events
+
+**Admin Test Credentials:**
+- Email: ryan@essentialflavours.com.au
+- Password: Admin123!
+- Note: Password can be set via /api/local/set-password endpoint
 
 ---
 

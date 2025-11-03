@@ -30,20 +30,23 @@ passport.use(
     },
     async (email, password, done) => {
       try {
+        // Normalize email to lowercase for consistent rate limiting and validation
+        const normalizedEmail = email.toLowerCase().trim();
+
         // Check if email is in admin allowlist
-        if (!ADMIN_ALLOWED_EMAILS.includes(email.toLowerCase())) {
-          console.warn(`[LocalAuth] Unauthorized login attempt for non-admin email: ${email}`);
+        if (!ADMIN_ALLOWED_EMAILS.includes(normalizedEmail)) {
+          console.warn(`[LocalAuth] Unauthorized login attempt for non-admin email: ${normalizedEmail}`);
           return done(null, false, { message: "Invalid credentials" });
         }
 
-        // Check rate limiting
-        const attempts = loginAttempts.get(email) || { count: 0, lastAttempt: 0 };
+        // Check rate limiting (use normalized email as key)
+        const attempts = loginAttempts.get(normalizedEmail) || { count: 0, lastAttempt: 0 };
         const now = Date.now();
 
         // Check if account is locked
         if (attempts.lockedUntil && now < attempts.lockedUntil) {
           const remainingMinutes = Math.ceil((attempts.lockedUntil - now) / 60000);
-          console.warn(`[LocalAuth] Account locked for ${email}. Remaining: ${remainingMinutes}m`);
+          console.warn(`[LocalAuth] Account locked for ${normalizedEmail}. Remaining: ${remainingMinutes}m`);
           return done(null, false, {
             message: `Account temporarily locked. Try again in ${remainingMinutes} minutes.`,
           });
@@ -55,24 +58,24 @@ passport.use(
           attempts.lockedUntil = undefined;
         }
 
-        // Get user from database
-        const user = await storage.getUserByEmail(email);
+        // Get user from database (use normalized email)
+        const user = await storage.getUserByEmail(normalizedEmail);
 
         if (!user) {
-          console.warn(`[LocalAuth] Login attempt for non-existent user: ${email}`);
-          incrementFailedAttempts(email, attempts, now);
+          console.warn(`[LocalAuth] Login attempt for non-existent user: ${normalizedEmail}`);
+          incrementFailedAttempts(normalizedEmail, attempts, now);
           return done(null, false, { message: "Invalid credentials" });
         }
 
         // Check if user is active
         if (!user.active) {
-          console.warn(`[LocalAuth] Login attempt for inactive user: ${email}`);
+          console.warn(`[LocalAuth] Login attempt for inactive user: ${normalizedEmail}`);
           return done(null, false, { message: "Account is inactive" });
         }
 
         // Check if password is set
         if (!user.passwordHash) {
-          console.warn(`[LocalAuth] Login attempt for user without password: ${email}`);
+          console.warn(`[LocalAuth] Login attempt for user without password: ${normalizedEmail}`);
           return done(null, false, { message: "Password not set. Please use Replit Auth or contact admin." });
         }
 
@@ -80,14 +83,14 @@ passport.use(
         const isValidPassword = await bcrypt.compare(password, user.passwordHash);
 
         if (!isValidPassword) {
-          console.warn(`[LocalAuth] Invalid password for user: ${email}`);
-          incrementFailedAttempts(email, attempts, now);
+          console.warn(`[LocalAuth] Invalid password for user: ${normalizedEmail}`);
+          incrementFailedAttempts(normalizedEmail, attempts, now);
           return done(null, false, { message: "Invalid credentials" });
         }
 
         // Successful login - reset attempts
-        loginAttempts.delete(email);
-        console.info(`[LocalAuth] Successful login for user: ${email}`);
+        loginAttempts.delete(normalizedEmail);
+        console.info(`[LocalAuth] Successful login for user: ${normalizedEmail}`);
         return done(null, user);
       } catch (error) {
         console.error("[LocalAuth] Authentication error:", error);

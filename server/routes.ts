@@ -34,7 +34,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('[LocalAuth] Session error:', err);
           return res.status(500).json({ message: "Failed to create session" });
         }
-        return res.json({ message: "Login successful", user });
+        // Return success without exposing sensitive user data
+        return res.json({ message: "Login successful" });
       });
     })(req, res, next);
   });

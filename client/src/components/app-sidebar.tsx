@@ -1,4 +1,4 @@
-import { Home, Users, FileText, Settings, LogOut, User, BarChart3, Building2, FlaskConical } from "lucide-react";
+import { Home, Users, FileText, Settings, LogOut, User, BarChart3, Building2 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -20,6 +20,11 @@ const adminMenuItems = [
     title: "Dashboard",
     url: "/",
     icon: Home,
+  },
+  {
+    title: "Quote Requests",
+    url: "/quote-requests",
+    icon: FileText,
   },
   {
     title: "Suppliers",

@@ -343,6 +343,187 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Quote Request Routes (admin/procurement only)
+  app.get('/api/quote-requests', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const currentUser = await storage.getUser(userId);
+      
+      if (currentUser?.role !== 'admin' && currentUser?.role !== 'procurement') {
+        return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });
+      }
+
+      const requests = await storage.getQuoteRequests();
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching quote requests:", error);
+      res.status(500).json({ message: "Failed to fetch quote requests" });
+    }
+  });
+
+  app.get('/api/quote-requests/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const currentUser = await storage.getUser(userId);
+      
+      if (currentUser?.role !== 'admin' && currentUser?.role !== 'procurement') {
+        return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });
+      }
+
+      const { id } = req.params;
+      const request = await storage.getQuoteRequest(id);
+      
+      if (!request) {
+        return res.status(404).json({ message: "Quote request not found" });
+      }
+
+      res.json(request);
+    } catch (error) {
+      console.error("Error fetching quote request:", error);
+      res.status(500).json({ message: "Failed to fetch quote request" });
+    }
+  });
+
+  app.post('/api/quote-requests', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const currentUser = await storage.getUser(userId);
+      
+      if (currentUser?.role !== 'admin' && currentUser?.role !== 'procurement') {
+        return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });
+      }
+
+      // Generate RFQ number
+      const requestNumber = await storage.generateRfqNumber();
+
+      // Extract supplier IDs from request body
+      const { supplierIds, ...requestData } = req.body;
+
+      // Convert submitByDate string to Date object
+      if (requestData.submitByDate) {
+        requestData.submitByDate = new Date(requestData.submitByDate);
+      }
+
+      // Create the quote request with status 'active'
+      const quoteRequest = await storage.createQuoteRequest({
+        ...requestData,
+        requestNumber,
+        status: 'active',
+        createdBy: userId,
+      });
+
+      // Create request-supplier relationships
+      if (supplierIds && Array.isArray(supplierIds)) {
+        for (const supplierId of supplierIds) {
+          await storage.createRequestSupplier({
+            requestId: quoteRequest.id,
+            supplierId: supplierId,
+          });
+        }
+      }
+
+      res.status(201).json(quoteRequest);
+    } catch (error) {
+      console.error("Error creating quote request:", error);
+      res.status(500).json({ message: "Failed to create quote request" });
+    }
+  });
+
+  app.post('/api/quote-requests/draft', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const currentUser = await storage.getUser(userId);
+      
+      if (currentUser?.role !== 'admin' && currentUser?.role !== 'procurement') {
+        return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });
+      }
+
+      // Generate RFQ number
+      const requestNumber = await storage.generateRfqNumber();
+
+      // Extract supplier IDs from request body
+      const { supplierIds, ...requestData } = req.body;
+
+      // Convert submitByDate string to Date object if provided
+      if (requestData.submitByDate) {
+        requestData.submitByDate = new Date(requestData.submitByDate);
+      }
+
+      // Create the quote request with status 'draft'
+      const quoteRequest = await storage.createQuoteRequest({
+        ...requestData,
+        requestNumber,
+        status: 'draft',
+        createdBy: userId,
+        // Set default values for optional fields if not provided
+        materialName: requestData.materialName || 'Draft - Material Pending',
+        quantityNeeded: requestData.quantityNeeded || '0',
+        unitOfMeasure: requestData.unitOfMeasure || 'kg',
+        submitByDate: requestData.submitByDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      });
+
+      // Create request-supplier relationships if suppliers were selected
+      if (supplierIds && Array.isArray(supplierIds)) {
+        for (const supplierId of supplierIds) {
+          await storage.createRequestSupplier({
+            requestId: quoteRequest.id,
+            supplierId: supplierId,
+          });
+        }
+      }
+
+      res.status(201).json(quoteRequest);
+    } catch (error) {
+      console.error("Error creating draft quote request:", error);
+      res.status(500).json({ message: "Failed to create draft quote request" });
+    }
+  });
+
+  app.patch('/api/quote-requests/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const currentUser = await storage.getUser(userId);
+      
+      if (currentUser?.role !== 'admin' && currentUser?.role !== 'procurement') {
+        return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });
+      }
+
+      const { id } = req.params;
+      
+      // Check if quote request exists
+      const existingRequest = await storage.getQuoteRequest(id);
+      if (!existingRequest) {
+        return res.status(404).json({ message: "Quote request not found" });
+      }
+
+      const updatedRequest = await storage.updateQuoteRequest(id, req.body);
+      res.json(updatedRequest);
+    } catch (error) {
+      console.error("Error updating quote request:", error);
+      res.status(500).json({ message: "Failed to update quote request" });
+    }
+  });
+
   // Health check
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", message: "Essential Flavours Supplier Portal API" });

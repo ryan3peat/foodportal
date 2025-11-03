@@ -12,6 +12,8 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import SupplierDashboard from "@/pages/supplier-dashboard";
 import UserManagement from "@/pages/user-management";
 import Suppliers from "@/pages/suppliers";
+import QuoteRequests from "@/pages/quote-requests";
+import CreateQuoteRequest from "@/pages/create-quote-request";
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -42,6 +44,8 @@ function Router() {
     <Switch>
       <Route path="/" component={isAdmin ? AdminDashboard : SupplierDashboard} />
       {isAdmin && <Route path="/suppliers" component={Suppliers} />}
+      {isAdmin && <Route path="/quote-requests" component={QuoteRequests} />}
+      {isAdmin && <Route path="/quote-requests/create" component={CreateQuoteRequest} />}
       {isAdmin && <Route path="/users" component={UserManagement} />}
       <Route component={NotFound} />
     </Switch>

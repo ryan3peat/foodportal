@@ -12,7 +12,6 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import SupplierDashboard from "@/pages/supplier-dashboard";
 import UserManagement from "@/pages/user-management";
 import Suppliers from "@/pages/suppliers";
-import RawMaterials from "@/pages/raw-materials";
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -43,7 +42,6 @@ function Router() {
     <Switch>
       <Route path="/" component={isAdmin ? AdminDashboard : SupplierDashboard} />
       {isAdmin && <Route path="/suppliers" component={Suppliers} />}
-      {isAdmin && <Route path="/raw-materials" component={RawMaterials} />}
       {isAdmin && <Route path="/users" component={UserManagement} />}
       <Route component={NotFound} />
     </Switch>

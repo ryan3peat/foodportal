@@ -27,11 +27,6 @@ const adminMenuItems = [
     icon: Building2,
   },
   {
-    title: "Raw Materials",
-    url: "/raw-materials",
-    icon: FlaskConical,
-  },
-  {
     title: "User Management",
     url: "/users",
     icon: User,

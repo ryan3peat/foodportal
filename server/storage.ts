@@ -1,7 +1,6 @@
 import {
   users,
   suppliers,
-  rawMaterials,
   quoteRequests,
   requestSuppliers,
   supplierQuotes,
@@ -9,8 +8,6 @@ import {
   type UpsertUser,
   type Supplier,
   type InsertSupplier,
-  type RawMaterial,
-  type InsertRawMaterial,
   type QuoteRequest,
   type InsertQuoteRequest,
   type RequestSupplier,
@@ -37,11 +34,6 @@ export interface IStorage {
   createSupplier(supplier: InsertSupplier): Promise<Supplier>;
   updateSupplier(id: string, supplier: Partial<InsertSupplier>): Promise<Supplier | undefined>;
   deleteSupplier(id: string): Promise<void>;
-  
-  // Raw material operations
-  getRawMaterials(): Promise<RawMaterial[]>;
-  getRawMaterial(id: string): Promise<RawMaterial | undefined>;
-  createRawMaterial(material: InsertRawMaterial): Promise<RawMaterial>;
   
   // Quote request operations
   getQuoteRequests(): Promise<QuoteRequest[]>;
@@ -167,21 +159,6 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSupplier(id: string): Promise<void> {
     await db.delete(suppliers).where(eq(suppliers.id, id));
-  }
-
-  // Raw material operations
-  async getRawMaterials(): Promise<RawMaterial[]> {
-    return await db.select().from(rawMaterials).orderBy(desc(rawMaterials.createdAt));
-  }
-
-  async getRawMaterial(id: string): Promise<RawMaterial | undefined> {
-    const [material] = await db.select().from(rawMaterials).where(eq(rawMaterials.id, id));
-    return material;
-  }
-
-  async createRawMaterial(materialData: InsertRawMaterial): Promise<RawMaterial> {
-    const [material] = await db.insert(rawMaterials).values(materialData).returning();
-    return material;
   }
 
   // Quote request operations

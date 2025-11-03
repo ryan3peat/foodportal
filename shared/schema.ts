@@ -74,32 +74,25 @@ export const suppliers = pgTable("suppliers", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Raw materials table
-export const rawMaterials = pgTable("raw_materials", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  materialName: varchar("material_name", { length: 255 }).notNull(),
-  casNumber: varchar("cas_number", { length: 50 }).notNull(),
-  femaNumber: varchar("fema_number", { length: 50 }),
-  description: text("description"),
-  category: categoryEnum("category").notNull(),
-  form: formEnum("form").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-// Quote requests table
+// Quote requests table (with embedded material details)
 export const quoteRequests = pgTable("quote_requests", {
   id: uuid("id").primaryKey().defaultRandom(),
   requestNumber: varchar("request_number", { length: 50 }).notNull().unique(),
-  rawMaterialId: uuid("raw_material_id").notNull().references(() => rawMaterials.id),
+  
+  // Embedded material details
+  materialName: varchar("material_name", { length: 255 }).notNull(),
+  casNumber: varchar("cas_number", { length: 50 }),
+  femaNumber: varchar("fema_number", { length: 50 }),
+  materialForm: formEnum("material_form"),
+  materialGrade: varchar("material_grade", { length: 100 }),
+  materialOrigin: varchar("material_origin", { length: 255 }),
+  packagingRequirements: text("packaging_requirements"),
+  materialNotes: text("material_notes"),
+  
+  // Quote request details
   quantityNeeded: numeric("quantity_needed", { precision: 10, scale: 2 }).notNull(),
   unitOfMeasure: varchar("unit_of_measure", { length: 50 }).notNull(),
-  specifications: jsonb("specifications").$type<{
-    purity?: string;
-    grade?: string;
-    origin?: string;
-    additionalSpecs?: string;
-  }>(),
+  additionalSpecifications: text("additional_specifications"),
   submitByDate: timestamp("submit_by_date").notNull(),
   status: quoteRequestStatusEnum("status").notNull().default('draft'),
   findNewSuppliers: boolean("find_new_suppliers").default(false).notNull(),
@@ -158,15 +151,7 @@ export const suppliersRelations = relations(suppliers, ({ one, many }) => ({
   supplierQuotes: many(supplierQuotes),
 }));
 
-export const rawMaterialsRelations = relations(rawMaterials, ({ many }) => ({
-  quoteRequests: many(quoteRequests),
-}));
-
 export const quoteRequestsRelations = relations(quoteRequests, ({ one, many }) => ({
-  rawMaterial: one(rawMaterials, {
-    fields: [quoteRequests.rawMaterialId],
-    references: [rawMaterials.id],
-  }),
   creator: one(users, {
     fields: [quoteRequests.createdBy],
     references: [users.id],
@@ -207,9 +192,6 @@ export type User = typeof users.$inferSelect;
 export type InsertSupplier = typeof suppliers.$inferInsert;
 export type Supplier = typeof suppliers.$inferSelect;
 
-export type InsertRawMaterial = typeof rawMaterials.$inferInsert;
-export type RawMaterial = typeof rawMaterials.$inferSelect;
-
 export type InsertQuoteRequest = typeof quoteRequests.$inferInsert;
 export type QuoteRequest = typeof quoteRequests.$inferSelect;
 
@@ -234,16 +216,8 @@ export const insertSupplierSchema = createInsertSchema(suppliers, {
   updatedAt: true,
 });
 
-export const insertRawMaterialSchema = createInsertSchema(rawMaterials, {
-  materialName: z.string().min(1, "Material name is required"),
-  casNumber: z.string().min(1, "CAS number is required"),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 export const insertQuoteRequestSchema = createInsertSchema(quoteRequests, {
+  materialName: z.string().min(1, "Material name is required"),
   quantityNeeded: z.string().min(1, "Quantity is required"),
   unitOfMeasure: z.string().min(1, "Unit of measure is required"),
   submitByDate: z.date(),

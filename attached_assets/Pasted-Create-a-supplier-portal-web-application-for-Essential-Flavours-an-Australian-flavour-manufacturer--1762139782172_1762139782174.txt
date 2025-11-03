@@ -1,0 +1,408 @@
+Create a supplier portal web application for Essential Flavours, an Australian flavour manufacturer. Use Node.js with Express backend, PostgreSQL database, and React frontend with Tailwind CSS.
+
+Initialize the project with:
+- Authentication system using JWT
+- Email service integration (Nodemailer with SendGrid/SMTP)
+- Environment variables for configuration
+- CORS setup for API
+
+Database schema:
+1. users table:
+   - id (UUID, primary key)
+   - email (unique)
+   - password (hashed)
+   - role (enum: 'admin', 'supplier', 'procurement')
+   - company_name
+   - created_at
+   - updated_at
+
+2. suppliers table:
+   - id (UUID, primary key)
+   - supplier_name (required)
+   - contact_person (required)
+   - email (required, unique)
+   - phone (optional)
+   - location (optional)
+   - moq (minimum order quantity, optional)
+   - lead_times (optional)
+   - payment_terms (optional)
+   - certifications (JSON array - HACCP, ISO, SQF, etc.)
+   - active (boolean)
+   - created_by (foreign key to users)
+   - created_at
+   - updated_at
+
+3. raw_materials table:
+   - id (UUID, primary key)
+   - material_name (required)
+   - cas_number (required)
+   - fema_number (optional)
+   - description
+   - category (enum: 'natural', 'synthetic', 'natural_identical')
+   - form (enum: 'liquid', 'powder', 'paste')
+   - created_at
+   - updated_at
+
+4. quote_requests table:
+   - id (UUID, primary key)
+   - request_number (auto-generated, format: RFQ-YYYY-XXXXX)
+   - raw_material_id (foreign key)
+   - quantity_needed
+   - unit_of_measure
+   - specifications (JSON - purity, grade, origin requirements)
+   - submit_by_date (required)
+   - status (enum: 'draft', 'active', 'closed', 'cancelled')
+   - find_new_suppliers (boolean)
+   - created_by (foreign key to users)
+   - created_at
+   - updated_at
+
+5. request_suppliers table (junction):
+   - request_id (foreign key)
+   - supplier_id (foreign key)
+   - email_sent_at
+   - email_opened_at
+   - response_submitted_at
+
+6. supplier_quotes table:
+   - id (UUID, primary key)
+   - request_id (foreign key)
+   - supplier_id (foreign key)
+   - price_per_unit
+   - currency (default: 'AUD')
+   - moq
+   - lead_time
+   - validity_date
+   - payment_terms
+   - additional_notes
+   - attachments (JSON array of file URLs)
+   - submitted_at
+   - status (enum: 'submitted', 'accepted', 'rejected')
+```
+
+---
+
+## **MODULE 2: AUTHENTICATION & USER MANAGEMENT**
+```
+Implement authentication system:
+
+1. Login page at /login:
+   - Email/password authentication
+   - Role-based redirection (admin → dashboard, supplier → quote submission)
+   - Password reset functionality
+   - Session timeout after 8 hours
+
+2. User roles and permissions:
+   ADMIN (Essential Flavours procurement team):
+   - Full CRUD on suppliers
+   - Create/edit/delete quote requests
+   - View all quotes and analytics
+   - Export data to Excel/CSV
+   - Manage user accounts
+
+   SUPPLIER:
+   - View requests sent to them
+   - Submit quotes
+   - Update their company profile
+   - View their quote history
+
+3. Registration flow:
+   - Admins can invite suppliers via email
+   - Suppliers receive unique registration link
+   - Auto-populate supplier info from invitation
+   - Email verification required
+
+4. Security features:
+   - bcrypt for password hashing
+   - Rate limiting on login attempts
+   - HTTPS enforcement
+   - Input sanitization
+   - SQL injection prevention
+```
+
+---
+
+## **MODULE 3: SUPPLIER MANAGEMENT**
+```
+Create supplier management interface for admins:
+
+1. Supplier List Page (/admin/suppliers):
+   - Searchable/sortable table with columns:
+     * Supplier Name
+     * Contact Person
+     * Email
+     * Location
+     * Status (Active/Inactive)
+     * Last Quote Date
+     * Actions (Edit/Delete/View History)
+   - Bulk import from CSV/Excel
+   - Export functionality
+   - Pagination (25 per page)
+
+2. Add/Edit Supplier Form:
+   Required fields:
+   - Supplier Name
+   - Contact Person
+   - Email Address
+   
+   Optional fields:
+   - Phone Number (with country code)
+   - Physical Address
+   - MOQ (Minimum Order Quantity)
+   - Standard Lead Times
+   - Payment Terms (Net 30/60/90)
+   - Preferred Categories (Natural/Synthetic/Both)
+   - Certifications (multi-select: ISO 9001, HACCP, SQF, Halal, Kosher, etc.)
+   - Notes/Comments
+   
+3. Supplier Profile View:
+   - Quote history with this supplier
+   - Average response time
+   - Price competitiveness ranking
+   - Document repository (certificates, agreements)
+   - Communication log
+```
+
+---
+
+## **MODULE 4: QUOTE REQUEST CREATION**
+```
+Build quote request creation interface:
+
+1. Create Request Page (/admin/requests/new):
+   
+   Step 1 - Material Information:
+   - Raw Material Name (required, autocomplete from database)
+   - CAS Number (required, format: XXXX-XX-X)
+   - FEMA Number (optional)
+   - Quantity Required (number + unit dropdown)
+   - Specifications:
+     * Purity percentage
+     * Grade (Food/Pharma/Technical)
+     * Origin requirements
+     * Form (Liquid/Powder/Paste)
+     * Additional specifications (rich text editor)
+   
+   Step 2 - Request Parameters:
+   - Submit Price By Date (date picker, minimum 3 business days)
+   - Validity Period Required (30/60/90 days)
+   - Delivery Terms (EXW/FOB/CIF/DDP)
+   - Target Price (optional, hidden from suppliers)
+   
+   Step 3 - Supplier Selection:
+   - Checkbox list of all active suppliers
+   - Filter by:
+     * Category capability
+     * Location
+     * Previous supply of material
+   - "Select All" / "Clear All" buttons
+   - "Find New Suppliers" checkbox (triggers external search)
+   
+   Step 4 - Review & Send:
+   - Preview of request
+   - Email preview
+   - Schedule send time option
+   - Send button with confirmation
+
+2. Request Templates:
+   - Save frequently requested materials as templates
+   - Quick clone previous requests
+```
+
+---
+
+## **MODULE 5: EMAIL NOTIFICATIONS**
+```
+Implement email notification system:
+
+1. Supplier Notification Email:
+   Subject: "New Quote Request from Essential Flavours - [Material Name] - RFQ-[Number]"
+   
+   Professional HTML email template with:
+   - Essential Flavours logo and branding
+   - Request summary box:
+     * Material: [Name]
+     * CAS Number: [Number]
+     * Quantity: [Amount]
+     * Submit by: [Date in red if < 5 days]
+   - Specifications table
+   - Large CTA button: "Submit Your Quote"
+   - One-click link with token authentication
+   - Footer with contact information
+
+2. Admin Notification Email:
+   Subject: "New Quote Received - [Supplier Name] - [Material Name]"
+   
+   Content:
+   - Supplier name and submitted price
+   - Link to dashboard
+   - Quick comparison if multiple quotes received
+   
+3. Email tracking:
+   - Track open rates
+   - Click-through tracking
+   - Reminder emails (48 hours before deadline)
+   - Non-responsive supplier alerts
+```
+
+---
+
+## **MODULE 6: SUPPLIER QUOTE SUBMISSION**
+```
+Create supplier quote submission interface:
+
+1. Quote Submission Page (accessed via email link):
+   - No login required (token-based access)
+   - Pre-filled request information display
+   - Submission form:
+     * Price per Unit (required)
+     * Currency selector (default AUD)
+     * Your MOQ
+     * Lead Time (days/weeks)
+     * Quote Validity (date picker)
+     * Payment Terms
+     * Additional Notes/Comments
+     * File attachments (COA, specifications, max 5 files, 10MB each)
+   
+2. Confirmation page:
+   - Success message
+   - Reference number
+   - Copy of submission emailed to supplier
+   - Option to update quote until deadline
+
+3. Supplier portal features:
+   - View all their pending requests
+   - History of submitted quotes
+   - Update company profile
+   - Upload updated certificates
+```
+
+---
+
+## **MODULE 7: ADMIN DASHBOARD**
+```
+Build comprehensive admin dashboard:
+
+1. Main Dashboard (/admin/dashboard):
+   - Statistics widgets:
+     * Active Requests
+     * Pending Quotes
+     * Average Response Rate
+     * Cost Savings This Month
+   
+   - Recent Activity feed
+   - Requests requiring action
+   - Upcoming deadlines calendar
+
+2. Request Management Table:
+   Columns:
+   - RFQ Number
+   - Material Name
+   - Status (color-coded)
+   - Suppliers Invited
+   - Responses Received
+   - Best Price
+   - Deadline
+   - Actions
+   
+   Features:
+   - Advanced filtering
+   - Bulk actions
+   - Export to Excel with formatting
+   - Print view
+
+3. Quote Comparison View:
+   - Side-by-side comparison table
+   - Highlight best price/terms
+   - Price history charts
+   - Automatic ranking algorithm:
+     * 40% price weight
+     * 20% lead time
+     * 20% payment terms
+     * 20% supplier reliability score
+   
+4. Analytics Section:
+   - Supplier performance metrics
+   - Material price trends
+   - Response rate by supplier
+   - Average quote turnaround time
+   - Savings tracker
+   - Downloadable reports
+```
+
+---
+
+## **MODULE 8: ADDITIONAL FEATURES**
+```
+Implement additional functionality:
+
+1. Document Management:
+   - Store supplier certificates
+   - Material specifications library
+   - Contract repository
+   - Automatic expiry alerts
+
+2. Audit Trail:
+   - Log all user actions
+   - Quote version history
+   - Email communication logs
+   - IP address tracking
+
+3. Integration Features:
+   - Export to accounting systems
+   - API endpoints for ERP integration
+   - Webhook notifications
+   - Bulk data import/export
+
+4. Mobile Responsiveness:
+   - Responsive design for all pages
+   - Touch-friendly interfaces
+   - Mobile app considerations
+
+5. Compliance Features:
+   - Data retention policies
+   - GDPR compliance for supplier data
+   - Automatic archiving
+   - Secure file storage (AWS S3 or similar)
+
+6. Advanced Search:
+   - Global search across all entities
+   - Search by CAS number
+   - Historical price search
+   - Supplier capability matrix
+```
+
+---
+
+## **MODULE 9: TESTING & DEPLOYMENT**
+```
+Final setup and deployment:
+
+1. Testing Requirements:
+   - Unit tests for API endpoints
+   - Integration tests for email service
+   - UI testing for critical flows
+   - Load testing for concurrent users
+   - Security testing (OWASP Top 10)
+
+2. Deployment Configuration:
+   - Environment: Production/Staging/Development
+   - Database backups (daily)
+   - SSL certificates
+   - CDN for static assets
+   - Error monitoring (Sentry or similar)
+   - Uptime monitoring
+
+3. User Training Materials:
+   - Admin user guide
+   - Supplier guide
+   - Video tutorials
+   - FAQ section
+
+4. Go-Live Checklist:
+   - Data migration from existing systems
+   - User acceptance testing
+   - Email deliverability testing
+   - Performance optimization
+   - Security audit
+   - Backup and recovery procedures

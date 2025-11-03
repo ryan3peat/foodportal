@@ -11,6 +11,7 @@ import Landing from "@/pages/landing";
 import AdminDashboard from "@/pages/admin-dashboard";
 import SupplierDashboard from "@/pages/supplier-dashboard";
 import UserManagement from "@/pages/user-management";
+import Suppliers from "@/pages/suppliers";
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -40,6 +41,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={isAdmin ? AdminDashboard : SupplierDashboard} />
+      {isAdmin && <Route path="/suppliers" component={Suppliers} />}
       {isAdmin && <Route path="/users" component={UserManagement} />}
       <Route component={NotFound} />
     </Switch>

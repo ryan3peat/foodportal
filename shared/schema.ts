@@ -227,6 +227,7 @@ export const insertSupplierSchema = createInsertSchema(suppliers, {
   email: z.string().email(),
   supplierName: z.string().min(1, "Supplier name is required"),
   contactPerson: z.string().min(1, "Contact person is required"),
+  certifications: z.array(z.string()).default([]),
 }).omit({
   id: true,
   createdAt: true,

@@ -3,7 +3,7 @@
 ## Project Overview
 A comprehensive B2B supplier portal for Essential Flavours, an Australian flavour manufacturer. The portal facilitates quote request management, supplier relationships, and procurement workflows with role-based access control.
 
-## Current Status: Module 3 Partially Complete ⚠️
+## Current Status: Module 4 Complete ✅
 
 ### Module 1: Database Schema & Foundation Setup
 **Status:** ✅ Complete
@@ -139,16 +139,77 @@ A comprehensive B2B supplier portal for Essential Flavours, an Australian flavou
 
 ---
 
+### Module 4: Quote Request Creation & History
+**Status:** ✅ Complete
+
+**Implemented:**
+- **Database Schema Changes:**
+  - Removed raw_materials table (user clarified: no separate materials catalog needed)
+  - Embedded material details directly in quote_requests table:
+    - materialName, casNumber, femaNumber, materialCategory, materialForm
+    - materialGrade, materialOrigin (optional fields)
+  - Updated schema to support draft/active workflows
+
+- **Quote Request Creation Wizard:**
+  - 4-step multi-step form workflow:
+    1. **Material Details** - Name, CAS number, FEMA, category, form, grade, origin
+    2. **Specifications** - Quantity, unit, submit-by date, additional specs
+    3. **Supplier Selection** - Select from existing suppliers OR "find new suppliers"
+    4. **Review & Submit** - Summary review before submission
+  - Step-by-step validation with visual progress indicators
+  - Allows draft saving at any step (bypasses strict validation)
+  - Allows submission with EITHER selected suppliers OR "find new suppliers" enabled
+  - Auto-generates RFQ numbers (format: RFQ-YYYY-XXXXX with zero-padded sequential number)
+  - Date picker integration with proper date handling
+  - Form state persistence across wizard steps
+
+- **Quote Requests List/History Page:**
+  - Table view with all quote request details
+  - Status badges (draft/active/closed/cancelled) with color coding
+  - Search functionality (filters by request number, material name)
+  - Status filter dropdown
+  - Date range filtering (created date)
+  - Sort by creation date (newest first)
+  - View/Edit functionality (future enhancement)
+  - Empty state handling with call-to-action
+
+- **API Routes:**
+  - POST /api/quote-requests - Create active quote request
+  - POST /api/quote-requests/draft - Save draft with relaxed validation
+  - GET /api/quote-requests - List all quote requests with filters
+  - GET /api/quote-requests/:id - Get single quote request
+  - Date conversion handling (ISO strings → Date objects for DB insertion)
+  - Request-supplier relationship creation
+  - RFQ number generation with year-based sequencing
+
+- **Bug Fixes:**
+  - Fixed validation to allow "find new suppliers" without selecting existing suppliers
+  - Fixed draft save to bypass strict field validation
+  - Fixed date conversion bug (submitByDate ISO string → Date object)
+  - Validated end-to-end workflow with playwright tests
+
+**Pages Created:**
+- `/quote-requests` - Quote Requests List/History (admin/procurement only)
+- `/quote-requests/create` - Multi-step Quote Request Creation Wizard (admin/procurement only)
+
+**Security:**
+- All routes protected with authentication middleware
+- Role-based authorization (admin/procurement only)
+- Input validation using Zod schemas with draft/active schema variants
+- Data sanitization and type conversion
+
+**Testing:**
+- End-to-end playwright test passed successfully
+- Validated full workflow: login → navigation → wizard → submission → list view
+- Verified RFQ number generation (RFQ-2025-00001)
+- Confirmed date handling and database insertion
+
+---
+
 ## Upcoming Modules
 
-### Module 4: Quote Request Creation
-- Multi-step form workflow
-- Material autocomplete
-- Supplier selection with filters
-- Request templates
-- Auto-generated RFQ numbers
-
-### Module 5: Email Notifications
+### Module 5: Email Notifications (Next)
+### Module 6: Supplier Quote Submission (Future)
 - Professional HTML email templates
 - SendGrid integration
 - Email tracking (open/click rates)

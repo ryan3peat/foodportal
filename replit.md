@@ -3,7 +3,7 @@
 ## Project Overview
 A comprehensive B2B supplier portal for Essential Flavours, an Australian flavour manufacturer. The portal facilitates quote request management, supplier relationships, and procurement workflows with role-based access control.
 
-## Current Status: Module 2 Complete ✅
+## Current Status: Module 3 Partially Complete ⚠️
 
 ### Module 1: Database Schema & Foundation Setup
 **Status:** ✅ Complete
@@ -90,14 +90,56 @@ A comprehensive B2B supplier portal for Essential Flavours, an Australian flavou
 
 ---
 
-## Upcoming Modules
-
 ### Module 3: Supplier Management
-- Supplier list with search/sort/filter
-- Add/Edit supplier forms
-- Bulk CSV import
-- Supplier profile views with quote history
-- Document repository for certificates
+**Status:** ⚠️ Partially Complete (Known Issue)
+
+**Implemented:**
+- Storage methods for supplier CRUD operations (already existed from Module 1)
+- API routes with authentication and authorization:
+  - GET /api/suppliers - List all suppliers
+  - GET /api/suppliers/:id - Get supplier by ID
+  - POST /api/suppliers - Create new supplier
+  - PATCH /api/suppliers/:id - Update supplier
+  - DELETE /api/suppliers/:id - Delete supplier
+- Supplier list page (`/suppliers`) with:
+  - Table view displaying all supplier details
+  - Search functionality (filters by name, email, contact person)
+  - Status filter (active/inactive)
+  - Delete confirmation dialog
+  - Empty state handling
+- Add/Edit supplier dialog with all fields:
+  - Required: Supplier Name, Contact Person, Email
+  - Optional: Phone, Location, MOQ, Lead Times, Payment Terms
+  - Certifications management (add/remove as badges)
+  - Active status toggle
+- Navigation integration in sidebar
+- Role-based access (admin/procurement only)
+
+**Known Issue:**
+- **Form Submission Bug:** The supplier creation/edit form experiences validation failures preventing submission. Root cause appears to be a Zod schema mismatch between `createInsertSchema` generated validation and form data structure for optional fields. Multiple fix attempts made:
+  - Converting empty strings to null for optional fields
+  - Simplifying form schema extensions
+  - Adding debug logging
+- **Impact:** UI is complete and functional for viewing/searching suppliers, but creating/editing suppliers via the dialog is currently non-functional
+- **Workaround:** Direct database manipulation or API testing tools can be used to manage suppliers until form issue is resolved
+- **Next Steps:** Requires deep investigation of Drizzle-Zod schema generation for nullable fields
+
+**Deferred Features (MVP not required):**
+- Supplier detail/profile page with document management
+- CSV bulk import functionality
+
+**Pages Created:**
+- `/suppliers` - Supplier Management (admin/procurement only)
+
+**Security:**
+- All routes protected with authentication middleware
+- Role-based authorization (admin/procurement only)
+- Input validation on backend using Zod schemas
+- Cascading deletes for related supplier data
+
+---
+
+## Upcoming Modules
 
 ### Module 4: Quote Request Creation
 - Multi-step form workflow
@@ -198,4 +240,4 @@ Building in modular phases, completing each module end-to-end before proceeding 
 ---
 
 ## Next Steps
-Proceed to **Module 2: Authentication & User Management** when ready.
+Proceed to **Module 4: Quote Request Creation** (Module 3 form submission issue documented as known issue).

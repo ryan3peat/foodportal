@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { FileText, Users, Clock, TrendingUp } from "lucide-react";
+import { Link } from "wouter";
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -105,29 +106,39 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="p-4 border border-border rounded-md hover-elevate cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <FileText className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <div className="font-medium text-foreground">Create Quote Request</div>
-                      <div className="text-sm text-muted-foreground">Start new RFQ workflow</div>
+                <Link href="/quote-requests/create">
+                  <div 
+                    className="p-4 border border-border rounded-md hover-elevate cursor-pointer" 
+                    data-testid="button-quick-create-quote"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <FileText className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-foreground">Create Quote Request</div>
+                        <div className="text-sm text-muted-foreground">Start new RFQ workflow</div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Link>
 
-                <div className="p-4 border border-border rounded-md hover-elevate cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Users className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <div className="font-medium text-foreground">Manage Suppliers</div>
-                      <div className="text-sm text-muted-foreground">View and edit supplier directory</div>
+                <Link href="/suppliers">
+                  <div 
+                    className="p-4 border border-border rounded-md hover-elevate cursor-pointer" 
+                    data-testid="button-quick-manage-suppliers"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Users className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-foreground">Manage Suppliers</div>
+                        <div className="text-sm text-muted-foreground">View and edit supplier directory</div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               </div>
             </CardContent>
           </Card>

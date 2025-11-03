@@ -40,7 +40,7 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// Users table (extended for Replit Auth + supplier portal needs)
+// Users table (extended for Replit Auth + supplier portal needs + local auth)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
@@ -49,6 +49,8 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   role: roleEnum("role").notNull().default('supplier'),
   companyName: varchar("company_name"),
+  passwordHash: varchar("password_hash", { length: 255 }),
+  passwordSetAt: timestamp("password_set_at"),
   active: boolean("active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

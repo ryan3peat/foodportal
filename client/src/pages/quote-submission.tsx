@@ -53,11 +53,21 @@ export default function QuoteSubmission() {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   // Extract token from URL query params
-  const token = new URLSearchParams(location.split('?')[1] || '').get('token');
+  const token = new URLSearchParams(window.location.search).get('token');
   const requestId = params?.id;
 
   const { data: quoteData, isLoading, error } = useQuery({
     queryKey: ['/api/public/quote-requests', requestId, token],
+    queryFn: async () => {
+      const url = `/api/public/quote-requests/${requestId}?token=${token}`;
+      const res = await fetch(url, {
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error(await res.text() || res.statusText);
+      }
+      return await res.json();
+    },
     enabled: !!requestId && !!token,
   });
 

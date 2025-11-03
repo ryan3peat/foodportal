@@ -24,6 +24,13 @@ export async function validateQuoteAccessToken(
 
     // Get all request-supplier relationships for this request
     const requestSuppliers = await storage.getRequestSuppliers(requestId);
+    console.log('[Token Auth] Request ID:', requestId);
+    console.log('[Token Auth] Token from query:', token);
+    console.log('[Token Auth] Request suppliers found:', requestSuppliers.length);
+    if (requestSuppliers.length > 0) {
+      console.log('[Token Auth] First supplier token:', requestSuppliers[0].accessToken);
+      console.log('[Token Auth] Tokens match:', requestSuppliers[0].accessToken === token);
+    }
     
     // Find the relationship matching this token
     const validAccess = requestSuppliers.find(
@@ -31,8 +38,11 @@ export async function validateQuoteAccessToken(
     );
 
     if (!validAccess) {
+      console.log('[Token Auth] No valid access found - token mismatch');
       return res.status(401).json({ message: 'Invalid access token' });
     }
+    
+    console.log('[Token Auth] Valid access found for supplier:', validAccess.supplierId);
 
     // Check if token has expired
     if (validAccess.tokenExpiresAt && new Date() > new Date(validAccess.tokenExpiresAt)) {

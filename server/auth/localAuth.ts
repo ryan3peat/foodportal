@@ -7,6 +7,7 @@ import { storage } from "../storage";
 const ADMIN_ALLOWED_EMAILS = [
   "ryan@essentialflavours.com.au",
   "admin@essentialflavours.com",
+  "mark@3peat.ai",
 ];
 
 // Login attempt tracking for rate limiting

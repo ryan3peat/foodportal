@@ -53,6 +53,7 @@ export function SupplierDialog({ open, onOpenChange, supplier }: SupplierDialogP
       supplierName: "",
       contactPerson: "",
       email: "",
+      email2: "",
       phone: "",
       location: "",
       moq: "",
@@ -70,12 +71,13 @@ export function SupplierDialog({ open, onOpenChange, supplier }: SupplierDialogP
         supplierName: supplier.supplierName,
         contactPerson: supplier.contactPerson,
         email: supplier.email,
-        phone: supplier.phone ?? "",
-        location: supplier.location ?? "",
-        moq: supplier.moq ?? "",
-        leadTimes: supplier.leadTimes ?? "",
-        paymentTerms: supplier.paymentTerms ?? "",
-        certifications: supplier.certifications ?? [],
+        email2: supplier.email2 || "",
+        phone: supplier.phone || "",
+        location: supplier.location || "",
+        moq: supplier.moq || "",
+        leadTimes: supplier.leadTimes || "",
+        paymentTerms: supplier.paymentTerms || "",
+        certifications: supplier.certifications || [],
         active: supplier.active,
         certificationsInput: "",
       });
@@ -84,6 +86,7 @@ export function SupplierDialog({ open, onOpenChange, supplier }: SupplierDialogP
         supplierName: "",
         contactPerson: "",
         email: "",
+        email2: "",
         phone: "",
         location: "",
         moq: "",
@@ -145,11 +148,12 @@ export function SupplierDialog({ open, onOpenChange, supplier }: SupplierDialogP
     
     const cleanedData = {
       ...supplierData,
-      phone: supplierData.phone?.trim() || null,
-      location: supplierData.location?.trim() || null,
-      moq: supplierData.moq?.trim() || null,
-      leadTimes: supplierData.leadTimes?.trim() || null,
-      paymentTerms: supplierData.paymentTerms?.trim() || null,
+      email2: supplierData.email2?.trim() || undefined,
+      phone: supplierData.phone?.trim() || undefined,
+      location: supplierData.location?.trim() || undefined,
+      moq: supplierData.moq?.trim() || undefined,
+      leadTimes: supplierData.leadTimes?.trim() || undefined,
+      paymentTerms: supplierData.paymentTerms?.trim() || undefined,
     };
     
     console.log("Submitting cleaned data:", cleanedData);
@@ -269,6 +273,31 @@ export function SupplierDialog({ open, onOpenChange, supplier }: SupplierDialogP
 
               <FormField
                 control={form.control}
+                name="email2"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email 2</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="email"
+                        placeholder="alternate@supplier.com"
+                        data-testid="input-email2"
+                        disabled={isPending}
+                      />
+                    </FormControl>
+                    <FormDescription className="text-xs">
+                      Optional secondary email
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
@@ -276,6 +305,7 @@ export function SupplierDialog({ open, onOpenChange, supplier }: SupplierDialogP
                     <FormControl>
                       <Input
                         {...field}
+                        value={field.value || ""}
                         placeholder="+61 2 1234 5678"
                         data-testid="input-phone"
                         disabled={isPending}
@@ -285,26 +315,27 @@ export function SupplierDialog({ open, onOpenChange, supplier }: SupplierDialogP
                   </FormItem>
                 )}
               />
-            </div>
 
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Location</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Sydney, NSW, Australia"
-                      data-testid="input-location"
-                      disabled={isPending}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value || ""}
+                        placeholder="Sydney, NSW, Australia"
+                        data-testid="input-location"
+                        disabled={isPending}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="grid grid-cols-3 gap-4">
               <FormField
@@ -316,6 +347,7 @@ export function SupplierDialog({ open, onOpenChange, supplier }: SupplierDialogP
                     <FormControl>
                       <Input
                         {...field}
+                        value={field.value || ""}
                         placeholder="1kg"
                         data-testid="input-moq"
                         disabled={isPending}
@@ -338,6 +370,7 @@ export function SupplierDialog({ open, onOpenChange, supplier }: SupplierDialogP
                     <FormControl>
                       <Input
                         {...field}
+                        value={field.value || ""}
                         placeholder="2-4 weeks"
                         data-testid="input-lead-times"
                         disabled={isPending}
@@ -357,6 +390,7 @@ export function SupplierDialog({ open, onOpenChange, supplier }: SupplierDialogP
                     <FormControl>
                       <Input
                         {...field}
+                        value={field.value || ""}
                         placeholder="Net 30"
                         data-testid="input-payment-terms"
                         disabled={isPending}

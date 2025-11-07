@@ -109,14 +109,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // For OIDC users logging in for the first time, create user record
       if (!user && req.user?.claims) {
         const claims = req.user.claims;
+        console.log('[DEBUG /api/auth/user] Creating new user from OIDC claims:', JSON.stringify(claims));
+        
+        // Determine role based on email domain and patterns
+        let role: 'admin' | 'supplier' | 'procurement' = 'supplier';
+        const email = claims.email?.toLowerCase() || '';
+        
+        // Admin detection: @essentialflavours.com.au emails or contains admin/procurement
+        if (email.includes('@essentialflavours.com.au')) {
+          if (email.includes('admin') || email.includes('procurement')) {
+            role = 'admin';
+          } else {
+            role = 'procurement'; // Other internal staff
+          }
+        }
+        
+        console.log('[DEBUG /api/auth/user] Determined role:', role, 'for email:', email);
+        
         user = await storage.upsertUser({
           id: claims.sub,
           email: claims.email,
           firstName: claims.first_name || claims.given_name || 'User',
           lastName: claims.last_name || claims.family_name || '',
-          role: 'supplier', // Default role for OIDC users
+          role,
           active: true,
         });
+        
+        console.log('[DEBUG /api/auth/user] User created/updated:', JSON.stringify(user));
       }
       
       res.json(user);
@@ -221,8 +240,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const currentUser = await storage.getUser(userId);
+      console.log('[DEBUG /api/suppliers] userId:', userId, 'currentUser:', JSON.stringify(currentUser));
       
       if (currentUser?.role !== 'admin' && currentUser?.role !== 'procurement') {
+        console.log('[DEBUG /api/suppliers] Access denied - role:', currentUser?.role);
         return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });
       }
 
@@ -414,13 +435,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/quote-requests', isAuthenticated, async (req: any, res) => {
     try {
       const userId = getUserId(req);
+      console.log('[DEBUG POST /api/quote-requests] userId:', userId, 'req.user:', JSON.stringify(req.user));
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
       const currentUser = await storage.getUser(userId);
+      console.log('[DEBUG POST /api/quote-requests] currentUser:', JSON.stringify(currentUser));
+      
+      if (!currentUser) {
+        console.log('[DEBUG POST /api/quote-requests] User not found in database! Checking all users...');
+        const allUsers = await storage.getAllUsers();
+        console.log('[DEBUG POST /api/quote-requests] All users in DB:', allUsers.map(u => ({ id: u.id, email: u.email, role: u.role })));
+      }
       
       if (currentUser?.role !== 'admin' && currentUser?.role !== 'procurement') {
+        console.log('[DEBUG POST /api/quote-requests] Access denied - role:', currentUser?.role);
         return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });
       }
 

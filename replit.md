@@ -27,7 +27,7 @@ The portal adheres to Material Design principles, utilizing the Roboto font fami
 -   **Public Quote Submission Interface:** Token-based public page for suppliers to submit quotes without login, featuring token validation, quote request details, and submission form.
 -   **Quote Comparison & Review:** Comprehensive detail page for quote requests displaying summaries, material details, and a comparison of supplier quotes with highlighting for the best price. Includes a "Quotes Received" tracker.
 -   **Authenticated Supplier Portal:** Extended database schema for product and shipping details, a `supplier_documents` table for post-approval uploads, dedicated supplier authentication middleware, and API endpoints. Features a tabbed dashboard UI, an enhanced quote submission form, and dedicated navigation.
--   **Dual-Access Portal Migration Features:** Promotion of the authenticated portal on token-based success pages and in RFQ emails, with auto-role detection for internal users.
+-   **Dual-Access Portal Migration Features:** Promotion of the authenticated portal on token-based success pages and in RFQ emails. All new users default to 'supplier' role; admins must manually promote users to admin/procurement roles via User Management.
 
 ### System Design Choices
 -   **Modular Development:** Project developed in modular phases for completeness and testability.

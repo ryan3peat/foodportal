@@ -86,7 +86,7 @@ export default function QuoteSubmission() {
 
   const submitMutation = useMutation({
     mutationFn: async (data: QuoteFormData) => {
-      const res = await apiRequest("POST", `/api/public/quote-requests/${requestId}/submit-quote?token=${token}`, data);
+      const res = await apiRequest(`/api/public/quote-requests/${requestId}/submit-quote?token=${token}`, "POST", data);
       return await res.json();
     },
     onSuccess: () => {

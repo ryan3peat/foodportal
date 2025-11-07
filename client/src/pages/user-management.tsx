@@ -36,7 +36,7 @@ export default function UserManagement() {
 
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      await apiRequest("PATCH", `/api/users/${userId}/role`, { role });
+      await apiRequest(`/api/users/${userId}/role`, "PATCH", { role });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -56,7 +56,7 @@ export default function UserManagement() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ userId, active }: { userId: string; active: boolean }) => {
-      await apiRequest("PATCH", `/api/users/${userId}/status`, { active });
+      await apiRequest(`/api/users/${userId}/status`, "PATCH", { active });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });

@@ -26,7 +26,11 @@ The portal adheres to Material Design principles, utilizing the Roboto font fami
 -   **Authentication & User Management:** Dual authentication (Replit Auth and local username/password for admin testing), role-based access control (Admin, Supplier, Procurement), protected routes, and an Admin User Management interface. Includes robust security features like bcrypt hashing, rate limiting, and email normalization.
 
 #### Module 3: Supplier Management (Completed)
--   CRUD operations for suppliers with API routes and a UI for listing and managing suppliers.
+-   **CRUD Operations:** Complete supplier management with API routes and UI for listing, creating, editing, and deleting suppliers.
+-   **Multiple Email Support:** Extended supplier schema with `email2` field to support secondary contact emails. Suppliers can have up to two email addresses (primary and secondary).
+-   **CSV Import:** Successfully imported 19 suppliers from CSV file with automatic email splitting for suppliers with multiple contacts.
+-   **Data Validation:** Form validation ensures proper email format for both primary and secondary email fields.
+-   **Critical Bug Fix:** Resolved incorrect parameter order in `apiRequest()` function. Changed signature from `(method, url, data)` to `(url, method, data)` to match intuitive usage pattern and fix delete operations.
 
 #### Module 4-5: Quote Request Workflow (Completed)
 -   **Quote Request Creation:** A 4-step multi-step wizard for creating quote requests, including material details, specifications, supplier selection, and review. Features draft saving, auto-generated RFQ numbers (RFQ-YYYY-XXXXX), and date handling.

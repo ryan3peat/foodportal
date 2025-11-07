@@ -117,7 +117,7 @@ export default function CreateQuoteRequest() {
 
   const createMutation = useMutation({
     mutationFn: async (data: QuoteRequestFormData) => {
-      return apiRequest("POST", "/api/quote-requests", data);
+      return apiRequest("/api/quote-requests", "POST", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quote-requests"] });
@@ -138,7 +138,7 @@ export default function CreateQuoteRequest() {
 
   const saveDraftMutation = useMutation({
     mutationFn: async (data: Partial<QuoteRequestFormData>) => {
-      return apiRequest("POST", "/api/quote-requests/draft", data);
+      return apiRequest("/api/quote-requests/draft", "POST", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quote-requests"] });

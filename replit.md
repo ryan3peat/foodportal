@@ -70,6 +70,36 @@ The portal adheres to Material Design principles, utilizing the Roboto font fami
 -   **Azure Credentials:** Configured via Replit secrets (AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, SENDER_EMAIL)
 -   **E2E Testing:** Successfully tested end-to-end with real email delivery via Microsoft Graph API
 
+#### Module 9: Authenticated Supplier Portal (In Progress)
+-   **Database Schema Extensions:** Extended `supplier_quotes` table with comprehensive product and shipping fields:
+    -   **Product Details:** packSize, shelfLife, storageRequirements, dangerousGoodsHandling
+    -   **Shipping & Logistics:** shippingTerms, freightCost (numeric with 2 decimal precision)
+    -   **Preliminary Approval:** preliminaryApprovalStatus (pending/approved/rejected), preliminaryApprovedAt, preliminaryApprovedBy
+-   **Supplier Documents Table:** Created `supplier_documents` table for post-approval document uploads with foreign key to `supplier_quotes`. Supports document types: COA, PIF, Specification, SDS, Halal/Kosher/Organic certificates, GFSI certification, process flow diagrams, natural status declarations
+-   **Supplier Authentication Middleware:** `requireSupplierAccess` middleware matches logged-in users (Replit Auth) to supplier records via email (checks both email and email2 fields), verifies supplier has received quote requests, and attaches supplier context to requests
+-   **Supplier API Endpoints:**
+    -   GET /api/supplier/dashboard - Dashboard statistics (ongoing/outstanding/expired/approved quote counts)
+    -   GET /api/supplier/quote-requests - List all quote requests for authenticated supplier
+    -   GET /api/supplier/quote-requests/:requestId - Detailed view of specific quote request with access validation
+    -   POST /api/supplier/quotes - Submit or update quotes with comprehensive validation
+    -   GET/POST /api/supplier/quotes/:quoteId/documents - Document management (post-approval)
+    -   PATCH /api/supplier/quotes/:quoteId/preliminary-approval - Admin approval workflow
+-   **Supplier Dashboard UI:** Tabbed interface with Material Design aesthetics showing:
+    -   Statistics cards: Ongoing Requests, Outstanding Quotes, Expired Requests, Approved Quotes
+    -   Tabbed views: Ongoing (active requests), Under Review (submitted quotes), Approved (ready for documents), Expired (past deadline)
+    -   Real-time data with loading states and empty state handling
+-   **Enhanced Quote Submission Form:** Comprehensive form organized into logical sections:
+    -   Pricing & Terms: Price per unit, pack size, MOQ, payment terms
+    -   Shipping & Logistics: Lead time to Melbourne, freight cost, shipping terms
+    -   Product Information: Shelf life, storage requirements, dangerous goods handling
+    -   Form validation with Zod schemas, proper TypeScript typing, loading/error states
+-   **Navigation & Routing:** Dedicated supplier routes (/supplier/dashboard, /supplier/quote-requests/:id) with sidebar navigation for supplier role
+-   **Critical Bug Fixes:**
+    -   Fixed query key to call correct detail endpoint (`/api/supplier/quote-requests/${requestId}`) instead of list endpoint
+    -   Moved form reset logic to useEffect for proper data hydration on quote updates
+    -   Added explicit null coalescing for optional form fields to prevent TypeScript errors
+-   **Remaining Tasks:** Document upload UI with object storage integration, admin preliminary approval workflow interface, end-to-end testing
+
 ### System Design Choices
 -   **Modular Development:** The project is built in modular phases, ensuring each feature set is complete and testable.
 -   **Role-Based Access Control (RBAC):** Granular permissions for Admin, Supplier, and Procurement roles.

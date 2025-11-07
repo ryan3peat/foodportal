@@ -103,7 +103,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      const user = await storage.getUser(userId);
+      
+      let user = await storage.getUser(userId);
+      
+      // For OIDC users logging in for the first time, create user record
+      if (!user && req.user?.claims) {
+        const claims = req.user.claims;
+        user = await storage.upsertUser({
+          id: claims.sub,
+          email: claims.email,
+          firstName: claims.first_name || claims.given_name || 'User',
+          lastName: claims.last_name || claims.family_name || '',
+          role: 'supplier', // Default role for OIDC users
+          active: true,
+        });
+      }
+      
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -678,15 +693,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Submit or update a quote
   app.post('/api/supplier/quotes', isAuthenticated, requireSupplierAccess, async (req: any, res) => {
     try {
+      console.log('=== SUPPLIER QUOTE SUBMISSION ===');
+      console.log('Request body:', JSON.stringify(req.body, null, 2));
+      
       const supplier = req.supplier;
       const userId = req.userId;
-      const { requestId, ...quoteData } = req.body;
+      const { requestId, ...rawQuoteData } = req.body;
+      
+      console.log('Supplier ID:', supplier.id);
+      console.log('Request ID:', requestId);
+      console.log('Raw quote data:', JSON.stringify(rawQuoteData, null, 2));
+      
+      // Validate and transform quote data using Zod schema
+      const validation = insertSupplierQuoteSchema.safeParse(rawQuoteData);
+      if (!validation.success) {
+        console.error('Validation failed:', validation.error.errors);
+        return res.status(400).json({ 
+          message: "Invalid quote data", 
+          errors: validation.error.errors 
+        });
+      }
+      
+      const quoteData = validation.data;
+      console.log('Validated quote data:', JSON.stringify(quoteData, null, 2));
 
       // Verify supplier has access to this request
       const quoteRequests = await storage.getSupplierQuoteRequests(supplier.id);
+      console.log('Supplier has access to', quoteRequests.length, 'quote requests');
       const hasAccess = quoteRequests.some(qr => qr.request.id === requestId);
+      console.log('Has access to request:', hasAccess);
 
       if (!hasAccess) {
+        console.error('Access denied - supplier does not have access to this request');
         return res.status(403).json({ message: "Access denied to this quote request" });
       }
 

@@ -291,10 +291,13 @@ export const insertQuoteRequestSchema = createInsertSchema(quoteRequests, {
 });
 
 export const insertSupplierQuoteSchema = createInsertSchema(supplierQuotes, {
-  pricePerUnit: z.string().min(1, "Price is required"),
+  pricePerUnit: z.coerce.number().positive("Price must be greater than 0"),
   packSize: z.string().optional(),
   shippingTerms: z.string().optional(),
-  freightCost: z.string().optional(),
+  freightCost: z.preprocess(
+    (val) => val === '' || val === null || val === undefined ? undefined : Number(val),
+    z.number().positive("Freight cost must be greater than 0").optional()
+  ),
   shelfLife: z.string().optional(),
   storageRequirements: z.string().optional(),
   dangerousGoodsHandling: z.string().optional(),

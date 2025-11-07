@@ -44,9 +44,7 @@ import {
   Pencil, 
   Trash2, 
   Building2,
-  MapPin,
   Mail,
-  Phone,
   FileText
 } from "lucide-react";
 import type { Supplier } from "@shared/schema";
@@ -190,8 +188,6 @@ export default function Suppliers() {
                     <TableHead>Supplier</TableHead>
                     <TableHead>Contact Person</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Location</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -233,26 +229,6 @@ export default function Suppliers() {
                             {supplier.email}
                           </span>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {supplier.phone && (
-                          <div className="flex items-center gap-2">
-                            <Phone className="h-3 w-3 text-secondary" />
-                            <span className="text-sm" data-testid={`text-phone-${supplier.id}`}>
-                              {supplier.phone}
-                            </span>
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {supplier.location && (
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-3 w-3 text-secondary" />
-                            <span className="text-sm truncate max-w-[200px]" data-testid={`text-location-${supplier.id}`}>
-                              {supplier.location}
-                            </span>
-                          </div>
-                        )}
                       </TableCell>
                       <TableCell>
                         <Badge

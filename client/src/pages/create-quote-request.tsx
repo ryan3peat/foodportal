@@ -151,6 +151,18 @@ export default function CreateQuoteRequest() {
   });
 
   const onSubmit = (data: QuoteRequestFormData) => {
+    console.log('=== FORM ONSUBMIT CALLED ===');
+    console.log('Stack trace:', new Error().stack);
+    console.log('Current step:', currentStep);
+    console.log('Form data:', data);
+    
+    // CRITICAL: Only submit if we're on step 4 (Review & Submit)
+    if (currentStep !== 4) {
+      console.log('=== SUBMISSION BLOCKED - Not on step 4 ===');
+      console.log('Attempted submission on step:', currentStep);
+      return;
+    }
+    
     createMutation.mutate(data);
   };
 
@@ -161,6 +173,8 @@ export default function CreateQuoteRequest() {
   };
 
   const nextStep = async () => {
+    console.log('=== NEXT STEP CALLED ===');
+    console.log('Current step before validation:', currentStep);
     const fieldsToValidate = getFieldsForStep(currentStep);
     
     if (currentStep === 3) {
@@ -255,7 +269,29 @@ export default function CreateQuoteRequest() {
       </Card>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form 
+          onSubmit={(e) => {
+            e.preventDefault(); // Always prevent default form submission
+            console.log('=== FORM SUBMIT EVENT TRIGGERED ===');
+            console.log('Current step:', currentStep);
+            
+            // Only proceed if on step 4
+            if (currentStep === 4) {
+              form.handleSubmit(onSubmit)(e);
+            } else {
+              console.log('=== SUBMIT PREVENTED - Not on step 4 ===');
+            }
+          }}
+          onKeyDown={(e) => {
+            // Prevent Enter key from submitting form on steps 1-3
+            if (e.key === 'Enter' && currentStep < 4) {
+              e.preventDefault();
+              console.log('=== ENTER KEY PRESSED - PREVENTED ===');
+              console.log('Current step:', currentStep);
+            }
+          }}
+          className="space-y-6"
+        >
           {/* Step 1: Material Details */}
           {currentStep === 1 && (
             <Card>

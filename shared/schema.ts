@@ -61,7 +61,8 @@ export const suppliers = pgTable("suppliers", {
   id: uuid("id").primaryKey().defaultRandom(),
   supplierName: varchar("supplier_name", { length: 255 }).notNull(),
   contactPerson: varchar("contact_person", { length: 255 }).notNull(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).notNull(),
+  email2: varchar("email2", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
   location: text("location"),
   moq: text("moq"),
@@ -92,6 +93,7 @@ export const quoteRequests = pgTable("quote_requests", {
   // Quote request details
   quantityNeeded: numeric("quantity_needed", { precision: 10, scale: 2 }).notNull(),
   unitOfMeasure: varchar("unit_of_measure", { length: 50 }).notNull(),
+  specifications: jsonb("specifications").$type<Record<string, any>>(),
   additionalSpecifications: text("additional_specifications"),
   submitByDate: timestamp("submit_by_date").notNull(),
   status: quoteRequestStatusEnum("status").notNull().default('draft'),
@@ -207,6 +209,7 @@ export type SupplierQuote = typeof supplierQuotes.$inferSelect;
 
 export const insertSupplierSchema = createInsertSchema(suppliers, {
   email: z.string().email(),
+  email2: z.string().email().optional().or(z.literal('')),
   supplierName: z.string().min(1, "Supplier name is required"),
   contactPerson: z.string().min(1, "Contact person is required"),
   certifications: z.array(z.string()).default([]),

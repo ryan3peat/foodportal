@@ -5,7 +5,8 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import localPassport from "./auth/localAuth";
 import { hashPassword, validatePasswordComplexity } from "./auth/localAuth";
 import { insertSupplierSchema } from "@shared/schema";
-import { emailService, generateAccessToken, generateQuoteSubmissionUrl } from "./email/emailService";
+import { generateAccessToken, generateQuoteSubmissionUrl } from "./email/emailService";
+import { emailService } from "./email/hybridEmailService";
 import { validateQuoteAccessToken } from "./middleware/tokenAuth";
 
 // Helper function to get user ID from either OIDC or local auth

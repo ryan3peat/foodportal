@@ -14,7 +14,7 @@ I want to use iterative development, with a focus on completing each module end-
 -   **Database:** PostgreSQL (Neon) with Drizzle ORM
 -   **Authentication:** Replit Auth (OpenID Connect)
 -   **Storage:** Replit Object Storage
--   **Email:** Mock service with a planned migration path
+-   **Email:** Microsoft Graph API (Outlook/M365) with HybridEmailService orchestrator
 
 ### Design System
 The portal adheres to Material Design principles, utilizing the Roboto font family. It features a professional B2B aesthetic, information-dense interfaces, consistent spacing, and an accessibility-first approach.
@@ -34,7 +34,7 @@ The portal adheres to Material Design principles, utilizing the Roboto font fami
 
 #### Module 4-5: Quote Request Workflow (Completed)
 -   **Quote Request Creation:** A 4-step multi-step wizard for creating quote requests, including material details, specifications, supplier selection, and review. Features draft saving, auto-generated RFQ numbers (RFQ-YYYY-XXXXX), and date handling.
--   **Email Notifications:** A mock email service with professional HTML templates for RFQ notifications, sending emails to selected suppliers with token-based authentication links for quote submission. Includes a secure 64-character random access token system with 30-day expiration.
+-   **Email Notifications:** Professional HTML email templates for RFQ notifications, sent to selected suppliers with token-based authentication links for quote submission. Includes a secure 64-character random access token system with 30-day expiration.
 
 #### Module 6: Supplier Quote Submission (Completed)
 -   **Public Quote Submission Interface:** A token-based public page at `/quote-submission/:id?token=xxx` that allows suppliers to submit quotes without login. Features:
@@ -60,6 +60,16 @@ The portal adheres to Material Design principles, utilizing the Roboto font fami
     -   Resolved foreign key constraint violation in `upsertUser()` method that occurred during OIDC login. Fix excludes the `id` field from update operations to prevent attempts to modify primary keys referenced by other tables.
     -   Fixed Create Supplier button by adding `createdBy` to `insertSupplierSchema` omit block, allowing frontend validation to pass without providing server-populated fields.
 
+#### Module 8: Microsoft Graph Email Integration (Completed)
+-   **MicrosoftGraphEmailService:** Production-ready email service that sends RFQ notifications via Microsoft Graph API using Azure app registration credentials. Emails sent from ryanc@essentialflavours.com.au.
+-   **HybridEmailService:** Service orchestrator that supports environment-driven email provider selection with optional fallback support:
+    -   **EMAIL_PROVIDER:** Set to `graph` (production) or `mock` (development/testing)
+    -   **ALLOW_MOCK_FALLBACK:** Enable automatic fallback to mock service if Graph API fails (development only)
+-   **Accurate Audit Trail:** The `emailSentAt` timestamp in `request_suppliers` table is only set on confirmed successful email delivery
+-   **Comprehensive Error Handling:** Graph API failures are logged with actionable diagnostics; system surfaces failures for operational visibility
+-   **Azure Credentials:** Configured via Replit secrets (AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, SENDER_EMAIL)
+-   **E2E Testing:** Successfully tested end-to-end with real email delivery via Microsoft Graph API
+
 ### System Design Choices
 -   **Modular Development:** The project is built in modular phases, ensuring each feature set is complete and testable.
 -   **Role-Based Access Control (RBAC):** Granular permissions for Admin, Supplier, and Procurement roles.
@@ -72,5 +82,27 @@ The portal adheres to Material Design principles, utilizing the Roboto font fami
 -   **PostgreSQL (Neon):** Primary database for data persistence.
 -   **Replit Auth (OpenID Connect):** Used for user authentication.
 -   **Replit Object Storage (Google Cloud Storage):** For file uploads.
--   **Microsoft Graph API:** Planned integration for official M365 email services (future).
--   **SendGrid:** Considered as an alternative email service provider (future).
+-   **Microsoft Graph API:** Production email service for sending RFQ notifications via Outlook/M365 (ryanc@essentialflavours.com.au).
+
+## Environment Variables
+The following environment variables are required for the application to function properly:
+
+### Authentication
+-   **SESSION_SECRET:** Secret key for Express session encryption (auto-configured by Replit)
+
+### Database
+-   **DATABASE_URL:** PostgreSQL connection string (auto-configured by Replit)
+-   **PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE:** PostgreSQL connection parameters (auto-configured by Replit)
+
+### Email Service (Microsoft Graph API)
+-   **AZURE_TENANT_ID:** Azure AD tenant ID for M365 organization
+-   **AZURE_CLIENT_ID:** Azure app registration client ID
+-   **AZURE_CLIENT_SECRET:** Azure app registration client secret value (not secret ID)
+-   **SENDER_EMAIL:** Email address to send from (e.g., ryanc@essentialflavours.com.au)
+-   **EMAIL_PROVIDER:** Email provider selection - `graph` (default, production) or `mock` (development/testing)
+-   **ALLOW_MOCK_FALLBACK:** Enable mock email fallback - `true` (development) or `false` (default, production)
+
+### Object Storage
+-   **DEFAULT_OBJECT_STORAGE_BUCKET_ID:** Replit object storage bucket ID (auto-configured)
+-   **PUBLIC_OBJECT_SEARCH_PATHS:** Public asset search paths (auto-configured)
+-   **PRIVATE_OBJECT_DIR:** Private object directory (auto-configured)

@@ -215,6 +215,7 @@ export const insertSupplierSchema = createInsertSchema(suppliers, {
   certifications: z.array(z.string()).default([]),
 }).omit({
   id: true,
+  createdBy: true,
   createdAt: true,
   updatedAt: true,
 });

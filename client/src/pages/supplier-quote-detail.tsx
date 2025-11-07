@@ -79,14 +79,14 @@ export default function SupplierQuoteDetail() {
     resolver: zodResolver(quoteFormSchema),
     defaultValues: {
       requestId: requestId || '',
-      pricePerUnit: '',
+      pricePerUnit: 0,
       currency: 'AUD',
       moq: '',
       leadTime: '',
       paymentTerms: '',
       packSize: '',
       shippingTerms: '',
-      freightCost: '',
+      freightCost: undefined,
       shelfLife: '',
       storageRequirements: '',
       dangerousGoodsHandling: '',
@@ -99,14 +99,14 @@ export default function SupplierQuoteDetail() {
     if (detail?.quote) {
       form.reset({
         requestId: requestId || '',
-        pricePerUnit: detail.quote.pricePerUnit,
+        pricePerUnit: Number(detail.quote.pricePerUnit),
         currency: 'AUD',
         moq: detail.quote.moq ?? '',
         leadTime: detail.quote.leadTime ?? '',
         paymentTerms: detail.quote.paymentTerms ?? '',
         packSize: detail.quote.packSize ?? '',
         shippingTerms: detail.quote.shippingTerms ?? '',
-        freightCost: detail.quote.freightCost ?? '',
+        freightCost: detail.quote.freightCost ? Number(detail.quote.freightCost) : undefined,
         shelfLife: detail.quote.shelfLife ?? '',
         storageRequirements: detail.quote.storageRequirements ?? '',
         dangerousGoodsHandling: detail.quote.dangerousGoodsHandling ?? '',
@@ -139,7 +139,16 @@ export default function SupplierQuoteDetail() {
   });
 
   const onSubmit = (data: QuoteFormValues) => {
+    console.log('=== FORM SUBMISSION ===');
+    console.log('Form data:', data);
+    console.log('Form errors:', form.formState.errors);
     submitQuoteMutation.mutate(data);
+  };
+
+  // Log validation errors
+  const onError = (errors: any) => {
+    console.error('=== FORM VALIDATION ERRORS ===');
+    console.error('Errors:', errors);
   };
 
   if (isLoading) {
@@ -279,7 +288,7 @@ export default function SupplierQuoteDetail() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
                 {/* Pricing Section */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-foreground">Pricing & Terms</h3>

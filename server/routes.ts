@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import localPassport from "./auth/localAuth";
 import { hashPassword, validatePasswordComplexity } from "./auth/localAuth";
-import { insertSupplierSchema } from "@shared/schema";
+import { insertSupplierSchema, insertSupplierQuoteSchema } from "@shared/schema";
 import { generateAccessToken, generateQuoteSubmissionUrl } from "./email/emailService";
 import { emailService } from "./email/hybridEmailService";
 import { validateQuoteAccessToken } from "./middleware/tokenAuth";
@@ -728,6 +728,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied to this quote request" });
       }
 
+      // Convert numeric fields to strings for database
+      const dbQuoteData = {
+        ...quoteData,
+        pricePerUnit: quoteData.pricePerUnit.toString(),
+        freightCost: quoteData.freightCost?.toString(),
+        attachments: [], // Default to empty array
+      };
+
       // Check if quote already exists
       const existingQuotes = await storage.getSupplierQuotes(requestId);
       const existingQuote = existingQuotes.find(q => q.supplierId === supplier.id);
@@ -735,11 +743,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let quote;
       if (existingQuote) {
         // Update existing quote
-        quote = await storage.updateSupplierQuote(existingQuote.id, quoteData);
+        quote = await storage.updateSupplierQuote(existingQuote.id, dbQuoteData);
       } else {
         // Create new quote
         quote = await storage.createSupplierQuote({
-          ...quoteData,
+          ...dbQuoteData,
           requestId,
           supplierId: supplier.id,
         });

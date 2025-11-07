@@ -303,7 +303,10 @@ export const insertSupplierQuoteSchema = createInsertSchema(supplierQuotes, {
   dangerousGoodsHandling: z.string().optional(),
 }).omit({
   id: true,
+  requestId: true, // Added by backend after validation
+  supplierId: true, // Added by backend middleware
   submittedAt: true,
+  status: true, // Auto-set to 'submitted'
   preliminaryApprovalStatus: true,
   preliminaryApprovedAt: true,
   preliminaryApprovedBy: true,

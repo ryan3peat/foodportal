@@ -187,6 +187,56 @@ router.get('/verify-magic-link', async (req: Request, res: Response) => {
   }
 });
 
+// Verify password setup token endpoint - called before showing the form
+router.get('/verify-setup-token', async (req: Request, res: Response) => {
+  try {
+    const token = req.query.token as string;
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ message: 'Invalid token' });
+    }
+
+    const tokenHash = hashToken(token);
+    const setupLink = await storage.getMagicLinkByTokenHash(tokenHash);
+
+    if (!setupLink) {
+      return res.status(400).json({
+        message: 'Invalid or expired password setup link',
+      });
+    }
+
+    // Verify it's a password_setup token
+    if (setupLink.type !== 'password_setup') {
+      return res.status(400).json({
+        message: 'Invalid token type',
+      });
+    }
+
+    if (setupLink.usedAt) {
+      return res.status(400).json({
+        message: 'This password setup link has already been used',
+      });
+    }
+
+    if (new Date() > setupLink.expiresAt) {
+      return res.status(400).json({
+        message: 'This password setup link has expired',
+      });
+    }
+
+    // Token is valid - return success
+    return res.status(200).json({
+      success: true,
+      email: setupLink.email,
+    });
+  } catch (error) {
+    console.error('Error verifying setup token:', error);
+    return res.status(500).json({
+      message: 'An error occurred while verifying the token',
+    });
+  }
+});
+
 // Password setup endpoint - verify token and set password
 router.post('/setup-password', ipRateLimiter, async (req: Request, res: Response) => {
   try {

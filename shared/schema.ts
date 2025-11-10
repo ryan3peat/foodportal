@@ -25,6 +25,7 @@ export const formEnum = pgEnum('form', ['liquid', 'powder', 'paste']);
 export const quoteRequestStatusEnum = pgEnum('quote_request_status', ['draft', 'active', 'closed', 'cancelled']);
 export const quoteStatusEnum = pgEnum('quote_status', ['submitted', 'accepted', 'rejected']);
 export const preliminaryApprovalStatusEnum = pgEnum('preliminary_approval_status', ['pending', 'approved', 'rejected']);
+export const magicLinkTypeEnum = pgEnum('magic_link_type', ['login', 'password_setup']);
 export const documentTypeEnum = pgEnum('document_type', [
   'coa',
   'pif',
@@ -69,11 +70,12 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Magic links table (for passwordless authentication)
+// Magic links table (for passwordless authentication and password setup)
 export const magicLinks = pgTable("magic_links", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: varchar("email", { length: 255 }).notNull(),
   tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(),
+  type: magicLinkTypeEnum("type").notNull().default('login'),
   expiresAt: timestamp("expires_at").notNull(),
   usedAt: timestamp("used_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

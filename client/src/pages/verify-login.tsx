@@ -32,7 +32,7 @@ export default function VerifyLogin() {
     },
     onSuccess: () => {
       setTimeout(() => {
-        window.location.href = '/supplier-dashboard';
+        window.location.href = '/supplier/dashboard';
       }, 2000);
     },
   });

@@ -4,6 +4,7 @@ import { storage } from '../storage';
 import { emailService } from '../email/hybridEmailService';
 import { generateMagicLinkToken, hashToken, normalizeEmail } from '../auth/magicLink';
 import { createRateLimiter, createEmailRateLimiter } from '../auth/rateLimiter';
+import { getBaseUrl } from '../utils/baseUrl';
 
 declare module 'express-session' {
   interface SessionData {
@@ -55,10 +56,7 @@ router.post('/request-magic-link', ipRateLimiter, emailRateLimiter, async (req: 
       expiresAt: new Date(Date.now() + MAGIC_LINK_EXPIRY_MS),
     });
 
-    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
-      : 'http://localhost:5000';
-    
+    const baseUrl = getBaseUrl();
     const magicLinkUrl = `${baseUrl}/verify-login?token=${token}`;
 
     const emailResult = await emailService.sendMagicLinkEmail(

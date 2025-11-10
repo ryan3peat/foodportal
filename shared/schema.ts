@@ -265,6 +265,20 @@ export type SupplierDocument = typeof supplierDocuments.$inferSelect;
 // VALIDATION SCHEMAS
 // ============================================================================
 
+export const insertUserSchema = createInsertSchema(users, {
+  email: z.string().email("Valid email is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  role: z.enum(['admin', 'supplier', 'procurement']),
+  active: z.boolean().default(true),
+}).omit({
+  id: true,
+  passwordHash: true,
+  passwordSetAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertSupplierSchema = createInsertSchema(suppliers, {
   email: z.string().email(),
   email2: z.string().email().optional().or(z.literal('')),

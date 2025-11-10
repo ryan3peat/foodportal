@@ -26,10 +26,12 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  createUser(user: Omit<UpsertUser, 'id'>): Promise<User>;
   getAllUsers(): Promise<User[]>;
   updateUserRole(id: string, role: 'admin' | 'supplier' | 'procurement'): Promise<User | undefined>;
   updateUserStatus(id: string, active: boolean): Promise<User | undefined>;
   setUserPassword(id: string, passwordHash: string): Promise<User | undefined>;
+  deleteUser(id: string): Promise<void>;
   
   // Supplier operations
   getSuppliers(): Promise<Supplier[]>;
@@ -175,6 +177,15 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return user;
+  }
+
+  async createUser(userData: Omit<UpsertUser, 'id'>): Promise<User> {
+    const [user] = await db.insert(users).values(userData).returning();
+    return user;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
 
   // Supplier operations

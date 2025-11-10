@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import localPassport from "./auth/localAuth";
 import { hashPassword, validatePasswordComplexity } from "./auth/localAuth";
-import { insertSupplierSchema, insertSupplierQuoteSchema } from "@shared/schema";
+import { insertUserSchema, insertSupplierSchema, insertSupplierQuoteSchema } from "@shared/schema";
 import { generateAccessToken, generateQuoteSubmissionUrl } from "./email/emailService";
 import { emailService } from "./email/hybridEmailService";
 import { validateQuoteAccessToken } from "./middleware/tokenAuth";
@@ -231,6 +231,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating user status:", error);
       res.status(500).json({ message: "Failed to update user status" });
+    }
+  });
+
+  app.post('/api/users', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const currentUser = await storage.getUser(userId);
+      
+      if (currentUser?.role !== 'admin' && currentUser?.role !== 'procurement') {
+        return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });
+      }
+
+      // Validate request body
+      const validationResult = insertUserSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: validationResult.error.errors 
+        });
+      }
+
+      // Check if user with this email already exists
+      const existingUser = await storage.getUserByEmail(validationResult.data.email);
+      if (existingUser) {
+        return res.status(409).json({ message: "User with this email already exists" });
+      }
+
+      const newUser = await storage.createUser(validationResult.data);
+      res.status(201).json(newUser);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
+  app.delete('/api/users/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const currentUser = await storage.getUser(userId);
+      
+      if (currentUser?.role !== 'admin' && currentUser?.role !== 'procurement') {
+        return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });
+      }
+
+      const { id } = req.params;
+      
+      // Check if user exists
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Prevent deleting yourself
+      if (id === userId) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+
+      await storage.deleteUser(id);
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
     }
   });
 

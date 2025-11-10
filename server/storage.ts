@@ -197,6 +197,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createSupplier(supplierData: InsertSupplier): Promise<Supplier> {
+    // Create user accounts for the supplier's email addresses
+    const emailsToProcess = [supplierData.email];
+    if (supplierData.email2) {
+      emailsToProcess.push(supplierData.email2);
+    }
+
+    for (const email of emailsToProcess) {
+      // Check if user already exists
+      const existingUser = await this.getUserByEmail(email);
+      
+      if (!existingUser) {
+        // Create a new supplier user account
+        await db.insert(users).values({
+          email,
+          firstName: supplierData.contactPerson.split(' ')[0] || supplierData.contactPerson,
+          lastName: supplierData.contactPerson.split(' ').slice(1).join(' ') || '',
+          role: 'supplier',
+          companyName: supplierData.supplierName,
+          active: true,
+        });
+      }
+    }
+
+    // Create the supplier record
     const [supplier] = await db.insert(suppliers).values(supplierData).returning();
     return supplier;
   }

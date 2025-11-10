@@ -53,7 +53,7 @@ export default function Landing() {
                 <DialogHeader>
                   <DialogTitle>Admin Login</DialogTitle>
                   <DialogDescription>
-                    Sign in with your admin credentials to access the full system
+                    Sign in with your email and password to access the admin portal
                   </DialogDescription>
                 </DialogHeader>
                 <AdminLoginForm />

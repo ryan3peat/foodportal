@@ -5,7 +5,7 @@ import { emailService } from '../email/hybridEmailService';
 import { generateMagicLinkToken, hashToken, normalizeEmail } from '../auth/magicLink';
 import { createRateLimiter, createEmailRateLimiter } from '../auth/rateLimiter';
 import { getBaseUrl } from '../utils/baseUrl';
-import { setPasswordSchema } from '@shared/passwordValidation';
+import { passwordSchema } from '@shared/passwordValidation';
 import bcrypt from 'bcrypt';
 
 declare module 'express-session' {
@@ -190,14 +190,16 @@ router.get('/verify-magic-link', async (req: Request, res: Response) => {
 // Password setup endpoint - verify token and set password
 router.post('/setup-password', ipRateLimiter, async (req: Request, res: Response) => {
   try {
-    const { token, password, confirmPassword } = req.body;
+    // Token comes from query string (sent by client in URL)
+    const token = req.query.token as string;
+    const { password } = req.body;
 
     if (!token || typeof token !== 'string') {
       return res.status(400).json({ message: 'Invalid token' });
     }
 
-    // Validate password using schema
-    const validationResult = setPasswordSchema.safeParse({ password, confirmPassword });
+    // Validate password - client already validates confirmPassword match
+    const validationResult = passwordSchema.safeParse(password);
     if (!validationResult.success) {
       return res.status(400).json({
         message: 'Password validation failed',
@@ -245,7 +247,7 @@ router.post('/setup-password', ipRateLimiter, async (req: Request, res: Response
     }
 
     // Hash password with bcrypt cost factor 12 (architect recommendation)
-    const passwordHash = await bcrypt.hash(validationResult.data.password, 12);
+    const passwordHash = await bcrypt.hash(validationResult.data, 12);
 
     // Atomically set password and mark token as used (prevents race condition)
     const result = await storage.setPasswordAndConsumeToken(user.id, passwordHash, setupLink.id);

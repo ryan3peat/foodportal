@@ -232,6 +232,54 @@ export class MicrosoftGraphEmailService {
 
     return { sent, failed, results };
   }
+
+  async sendEmail(
+    to: string,
+    subject: string,
+    html: string
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      const message = {
+        message: {
+          subject,
+          body: {
+            contentType: 'HTML',
+            content: html,
+          },
+          toRecipients: [
+            {
+              emailAddress: {
+                address: to,
+              },
+            },
+          ],
+        },
+        saveToSentItems: true,
+      };
+
+      console.log(`\n📧 Sending email via Microsoft Graph API`);
+      console.log(`To: ${to}`);
+      console.log(`From: ${this.senderEmail}`);
+      console.log(`Subject: ${subject}`);
+
+      await this.graphClient
+        .api(`/users/${this.senderEmail}/sendMail`)
+        .post(message);
+
+      console.log(`✅ Email sent successfully to ${to}`);
+
+      return {
+        success: true,
+        messageId: `graph-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      };
+    } catch (error) {
+      console.error('❌ Error sending email via Microsoft Graph:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
 }
 
 export const microsoftGraphEmailService = new MicrosoftGraphEmailService();

@@ -1,6 +1,8 @@
 import { MicrosoftGraphEmailService } from './microsoftGraphEmailService';
 import { MockEmailService } from './emailService';
 import type { EmailRecipient, RFQEmailData } from './emailService';
+import type { MagicLinkEmailData } from './magicLinkEmail';
+import { createMagicLinkEmailTemplate } from './magicLinkEmail';
 
 interface EmailProvider {
   sendRFQNotification(
@@ -12,6 +14,12 @@ interface EmailProvider {
     recipients: EmailRecipient[],
     rfqData: RFQEmailData[]
   ): Promise<{ sent: number; failed: number; results: any[] }>;
+
+  sendEmail(
+    to: string,
+    subject: string,
+    html: string
+  ): Promise<{ success: boolean; messageId?: string; error?: string }>;
 }
 
 export class HybridEmailService implements EmailProvider {
@@ -158,6 +166,52 @@ export class HybridEmailService implements EmailProvider {
     console.log(`\n📊 [${this.providerName}] Bulk Email Summary: ${result.sent} sent, ${result.failed} failed\n`);
 
     return result;
+  }
+
+  async sendEmail(
+    to: string,
+    subject: string,
+    html: string
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    if (!this.primaryProvider) {
+      return {
+        success: false,
+        error: 'No email provider configured',
+      };
+    }
+
+    console.log(`📧 [${this.providerName}] Attempting to send email to ${to}`);
+
+    const result = await this.primaryProvider.sendEmail(to, subject, html);
+
+    if (result.success) {
+      console.log(`✅ [${this.providerName}] Email sent successfully to ${to}`);
+      return result;
+    }
+
+    console.error(`❌ [${this.providerName}] Failed to send email to ${to}:`, result.error);
+
+    if (this.fallbackProvider) {
+      console.log(`⚠️  Attempting fallback to mock email service...`);
+      const fallbackResult = await this.fallbackProvider.sendEmail(to, subject, html);
+      
+      if (fallbackResult.success) {
+        console.log(`✅ [mock fallback] Email logged successfully for ${to}`);
+      }
+      
+      return fallbackResult;
+    }
+
+    return result;
+  }
+
+  async sendMagicLinkEmail(
+    email: string,
+    supplierName: string,
+    magicLinkData: MagicLinkEmailData
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    const { subject, html } = createMagicLinkEmailTemplate(supplierName, magicLinkData);
+    return this.sendEmail(email, subject, html);
   }
 }
 

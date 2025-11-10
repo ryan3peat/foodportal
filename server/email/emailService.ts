@@ -240,6 +240,37 @@ export class MockEmailService {
 
     return { sent, failed, results };
   }
+
+  async sendEmail(
+    to: string,
+    subject: string,
+    html: string
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      console.log('\n' + '='.repeat(80));
+      console.log('📧 MOCK EMAIL');
+      console.log('='.repeat(80));
+      console.log(`To: ${to}`);
+      console.log(`From: Essential Flavours <noreply@essentialflavours.com.au>`);
+      console.log(`Subject: ${subject}`);
+      console.log('-'.repeat(80));
+      console.log('HTML Content Preview:');
+      console.log('-'.repeat(80));
+      console.log(html.substring(0, 500) + '...');
+      console.log('='.repeat(80) + '\n');
+
+      return {
+        success: true,
+        messageId: `mock-${Date.now()}-${Math.random().toString(36).substring(7)}`
+      };
+    } catch (error) {
+      console.error('Error in mock email service:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
 }
 
 // Export singleton instance

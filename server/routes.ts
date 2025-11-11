@@ -878,12 +878,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Transform and categorize requests
       const now = new Date();
-      const transformed = quoteRequests.map(qr => ({
-        ...qr.request,
-        requestSupplier: qr.requestSupplier,
-        quote: qr.quote,
-        isExpired: new Date(qr.request.submitByDate) <= now,
-        hasQuote: !!qr.quote,
+      const transformed = await Promise.all(quoteRequests.map(async qr => {
+        let documentsRequested = 0;
+        let documentsUploaded = 0;
+
+        // For approved quotes, get document counts
+        if (qr.quote && qr.quote.preliminaryApprovalStatus === 'approved') {
+          const documentRequests = await storage.getDocumentRequestsByQuote(qr.quote.id);
+          const supplierDocuments = await storage.getSupplierDocuments(qr.quote.id);
+          
+          documentsRequested = documentRequests.length;
+          documentsUploaded = supplierDocuments.length;
+        }
+
+        return {
+          ...qr.request,
+          requestSupplier: qr.requestSupplier,
+          quote: qr.quote ? {
+            ...qr.quote,
+            documentsRequested,
+            documentsUploaded,
+          } : null,
+          isExpired: new Date(qr.request.submitByDate) <= now,
+          hasQuote: !!qr.quote,
+        };
       }));
 
       res.json(transformed);

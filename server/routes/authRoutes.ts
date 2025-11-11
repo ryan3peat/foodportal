@@ -4,6 +4,9 @@ import { storage } from '../storage';
 import { emailService } from '../email/hybridEmailService';
 import { generateMagicLinkToken, hashToken, normalizeEmail } from '../auth/magicLink';
 import { createRateLimiter, createEmailRateLimiter } from '../auth/rateLimiter';
+import { getBaseUrl } from '../utils/baseUrl';
+import { passwordSchema } from '@shared/passwordValidation';
+import bcrypt from 'bcrypt';
 
 declare module 'express-session' {
   interface SessionData {
@@ -55,10 +58,7 @@ router.post('/request-magic-link', ipRateLimiter, emailRateLimiter, async (req: 
       expiresAt: new Date(Date.now() + MAGIC_LINK_EXPIRY_MS),
     });
 
-    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
-      : 'http://localhost:5000';
-    
+    const baseUrl = getBaseUrl();
     const magicLinkUrl = `${baseUrl}/verify-login?token=${token}`;
 
     const emailResult = await emailService.sendMagicLinkEmail(
@@ -183,6 +183,148 @@ router.get('/verify-magic-link', async (req: Request, res: Response) => {
     console.error('Error verifying magic link:', error);
     return res.status(500).json({
       message: 'An error occurred during verification',
+    });
+  }
+});
+
+// Verify password setup token endpoint - called before showing the form
+router.get('/verify-setup-token', async (req: Request, res: Response) => {
+  try {
+    const token = req.query.token as string;
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ message: 'Invalid token' });
+    }
+
+    const tokenHash = hashToken(token);
+    const setupLink = await storage.getMagicLinkByTokenHash(tokenHash);
+
+    if (!setupLink) {
+      return res.status(400).json({
+        message: 'Invalid or expired password setup link',
+      });
+    }
+
+    // Verify it's a password_setup token
+    if (setupLink.type !== 'password_setup') {
+      return res.status(400).json({
+        message: 'Invalid token type',
+      });
+    }
+
+    if (setupLink.usedAt) {
+      return res.status(400).json({
+        message: 'This password setup link has already been used',
+      });
+    }
+
+    if (new Date() > setupLink.expiresAt) {
+      return res.status(400).json({
+        message: 'This password setup link has expired',
+      });
+    }
+
+    // Token is valid - return success
+    return res.status(200).json({
+      success: true,
+      email: setupLink.email,
+    });
+  } catch (error) {
+    console.error('Error verifying setup token:', error);
+    return res.status(500).json({
+      message: 'An error occurred while verifying the token',
+    });
+  }
+});
+
+// Password setup endpoint - verify token and set password
+router.post('/setup-password', ipRateLimiter, async (req: Request, res: Response) => {
+  try {
+    // Token comes from query string (sent by client in URL)
+    const token = req.query.token as string;
+    const { password } = req.body;
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ message: 'Invalid token' });
+    }
+
+    // Validate password - client already validates confirmPassword match
+    const validationResult = passwordSchema.safeParse(password);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        message: 'Password validation failed',
+        errors: validationResult.error.errors,
+      });
+    }
+
+    const tokenHash = hashToken(token);
+    const setupLink = await storage.getMagicLinkByTokenHash(tokenHash);
+
+    if (!setupLink) {
+      return res.status(400).json({
+        message: 'Invalid or expired password setup link',
+        expired: true,
+      });
+    }
+
+    // Verify it's a password_setup token
+    if (setupLink.type !== 'password_setup') {
+      return res.status(400).json({
+        message: 'Invalid token type',
+      });
+    }
+
+    if (setupLink.usedAt) {
+      return res.status(400).json({
+        message: 'This password setup link has already been used',
+        expired: true,
+      });
+    }
+
+    if (new Date() > setupLink.expiresAt) {
+      return res.status(400).json({
+        message: 'This password setup link has expired',
+        expired: true,
+      });
+    }
+
+    // Get the user
+    const user = await storage.getUserByEmail(setupLink.email);
+    if (!user) {
+      return res.status(400).json({
+        message: 'User account not found',
+      });
+    }
+
+    // Hash password with bcrypt cost factor 12 (architect recommendation)
+    const passwordHash = await bcrypt.hash(validationResult.data, 12);
+
+    // Atomically set password and mark token as used (prevents race condition)
+    const result = await storage.setPasswordAndConsumeToken(user.id, passwordHash, setupLink.id);
+
+    if (!result.success) {
+      // Check if it was a "token already used" error (race condition caught)
+      if (result.error === 'Token already used') {
+        return res.status(400).json({
+          message: 'This password setup link has already been used',
+          expired: true,
+        });
+      }
+
+      console.error('Error setting password:', result.error);
+      return res.status(500).json({
+        message: 'Failed to set password. Please try again.',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password set successfully. You can now log in.',
+    });
+  } catch (error) {
+    console.error('Error in password setup:', error);
+    return res.status(500).json({
+      message: 'An error occurred during password setup',
     });
   }
 });

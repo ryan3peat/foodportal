@@ -5,6 +5,8 @@ import type { MagicLinkEmailData } from './magicLinkEmail';
 import { createMagicLinkEmailTemplate } from './magicLinkEmail';
 import type { DocumentRequestEmailData } from './documentRequestEmail';
 import { createDocumentRequestEmailTemplate } from './documentRequestEmail';
+import type { PasswordSetupEmailData } from './passwordSetupEmail';
+import { createPasswordSetupEmailTemplate } from './passwordSetupEmail';
 
 interface EmailProvider {
   sendRFQNotification(
@@ -222,6 +224,14 @@ export class HybridEmailService implements EmailProvider {
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     const { subject, html } = createDocumentRequestEmailTemplate(recipient.name, documentRequestData);
     return this.sendEmail(recipient.email, subject, html);
+  async sendPasswordSetupEmail(
+    email: string,
+    firstName: string,
+    lastName: string,
+    passwordSetupData: PasswordSetupEmailData
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    const { subject, html } = createPasswordSetupEmailTemplate(firstName, lastName, passwordSetupData);
+    return this.sendEmail(email, subject, html);
   }
 }
 

@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { getBaseUrl } from '../utils/baseUrl';
 
 export interface EmailRecipient {
   email: string;
@@ -30,9 +31,7 @@ export function generateAccessToken(): string {
  * Generates the quote submission URL with access token
  */
 export function generateQuoteSubmissionUrl(requestId: string, token: string): string {
-  const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-    ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
-    : 'http://localhost:5000';
+  const baseUrl = getBaseUrl();
   return `${baseUrl}/quote-submission/${requestId}?token=${token}`;
 }
 
@@ -140,7 +139,7 @@ function createRFQEmailTemplate(data: RFQEmailData, supplierName: string): strin
         <p style="margin: 0 0 16px; font-size: 14px; color: #1f2937;">
           Login to our supplier portal to view all your quote requests, track submission status, and manage your quotes in one place.
         </p>
-        <a href="${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000'}" 
+        <a href="${getBaseUrl()}" 
            style="display: inline-block; background: white; color: #1e40af; text-decoration: none; padding: 10px 24px; border: 2px solid #1e40af; border-radius: 6px; font-weight: 600; font-size: 14px;">
           Login to Portal
         </a>

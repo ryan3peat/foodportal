@@ -11,6 +11,8 @@ import { validateQuoteAccessToken } from "./middleware/tokenAuth";
 import { requireSupplierAccess } from "./middleware/supplierAuth";
 import authRoutes from "./routes/authRoutes";
 import { upload, validateFileSignature, getDocumentPath, deleteDocument, documentExists } from "./middleware/fileUpload";
+import { generateMagicLinkToken, PASSWORD_SETUP_EXPIRY_MINUTES, getTokenExpiryDate } from "./auth/magicLink";
+import { getBaseUrl } from "./utils/baseUrl";
 
 // Helper function to get user ID from local auth or supplier sessions
 function getUserId(req: any): string | undefined {
@@ -227,6 +229,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const newUser = await storage.createUser(validationResult.data);
+
+      // Send password setup email for Admin and Procurement users
+      if (newUser.role === 'admin' || newUser.role === 'procurement') {
+        try {
+          const { token, tokenHash } = generateMagicLinkToken();
+
+          await storage.createMagicLink({
+            email: newUser.email!,
+            tokenHash,
+            type: 'password_setup',
+            expiresAt: getTokenExpiryDate('password_setup'),
+          });
+
+          const baseUrl = getBaseUrl();
+          const setupLink = `${baseUrl}/set-password?token=${token}`;
+
+          const emailResult = await emailService.sendPasswordSetupEmail(
+            newUser.email!,
+            newUser.firstName || 'User',
+            newUser.lastName || '',
+            {
+              setupLink,
+              expiryMinutes: PASSWORD_SETUP_EXPIRY_MINUTES,
+            }
+          );
+
+          if (!emailResult.success) {
+            console.error('Failed to send password setup email:', emailResult.error);
+            // Don't fail the user creation, just log the error
+          }
+        } catch (emailError) {
+          console.error('Error sending password setup email:', emailError);
+          // Don't fail the user creation, just log the error
+        }
+      }
+
       res.status(201).json(newUser);
     } catch (error) {
       console.error("Error creating user:", error);

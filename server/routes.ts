@@ -887,7 +887,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const documentRequests = await storage.getDocumentRequestsByQuote(qr.quote.id);
           const supplierDocuments = await storage.getSupplierDocuments(qr.quote.id);
           
-          documentsRequested = documentRequests.length;
+          // Count total documents requested across all document request rows
+          documentsRequested = documentRequests.reduce((sum, dr) => 
+            sum + (dr.requestedDocuments as string[]).length, 0
+          );
           documentsUploaded = supplierDocuments.length;
         }
 

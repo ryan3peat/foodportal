@@ -49,7 +49,10 @@ The portal adheres to Material Design principles, utilizing the Roboto font fami
 -   **Replit Object Storage:** For file uploads.
 -   **Microsoft Graph API:** Production email service for magic links and RFQ notifications.
 
-## Recent Changes (November 11, 2025)
+## Recent Changes (November 12, 2025)
+-   **URL Normalization Fix:** Fixed double-slash bug in magic link and document request emails. Added `normalizeBaseUrl()` helper that strips trailing slashes from BASE_URL before path concatenation. All email URLs now correctly formatted (e.g., `/verify-login` instead of `//verify-login`). Centralized URL construction exclusively through `getBaseUrl()` utility to prevent future recurrence.
+
+## Previous Changes (November 11, 2025)
 -   **Dynamic Admin Authentication:** Replaced hardcoded admin email allowlist with database-driven role checking. Password authentication now automatically available for any user with 'admin' or 'procurement' role - no code changes needed when creating new admin users.
 -   **Document Request System:** Added missing `document_requests` table to database. Admins can now request specific documents (COA, SDS, Halal cert, etc.) from suppliers via the Quote Detail page.
 -   **Email Template Fixes:** Fixed "Submit Quote" button text color (white) and "Login to Portal" link to use correct BASE_URL instead of development URL.

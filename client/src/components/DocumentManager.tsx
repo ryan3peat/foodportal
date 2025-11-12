@@ -262,7 +262,7 @@ export default function DocumentManager({
     ...requestedDocuments,
     ...documentRequestsData.flatMap(req => req.requestedDocuments)
   ];
-  const uniqueRequestedDocs = [...new Set(allRequestedDocs)];
+  const uniqueRequestedDocs = Array.from(new Set(allRequestedDocs));
 
   const requestedDocTypes = uniqueRequestedDocs.length > 0
     ? uniqueRequestedDocs

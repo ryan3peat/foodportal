@@ -273,7 +273,7 @@ export default function DocumentManager({
 
   return (
     <div className="space-y-6">
-      {/* Outstanding Documents Alert (for suppliers) */}
+      {/* Outstanding Documents Alert (for suppliers) - Only show if can upload */}
       {canUpload && uniqueRequestedDocs.length > 0 && missingDocuments.length > 0 && (
         <Card className="border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/20">
           <CardHeader>

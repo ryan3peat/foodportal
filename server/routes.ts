@@ -672,6 +672,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requestData.submitByDate = new Date(requestData.submitByDate);
       }
 
+      // Ensure quantityNeeded is a valid string for numeric type
+      if (requestData.quantityNeeded !== undefined && requestData.quantityNeeded !== null) {
+        requestData.quantityNeeded = String(requestData.quantityNeeded);
+      }
+
+      console.log('Creating quote request with data:', {
+        ...requestData,
+        requestNumber,
+        status: 'active',
+        createdBy: userId,
+      });
+
       // Create the quote request with status 'active'
       const quoteRequest = await storage.createQuoteRequest({
         ...requestData,
@@ -733,9 +745,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.status(201).json(quoteRequest);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating quote request:", error);
-      res.status(500).json({ message: "Failed to create quote request" });
+      console.error("Error details:", error.message);
+      console.error("Error stack:", error.stack);
+      res.status(500).json({
+        message: "Failed to create quote request",
+        error: error.message || "Unknown error"
+      });
     }
   });
 

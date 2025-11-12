@@ -638,23 +638,34 @@ export class DatabaseStorage implements IStorage {
     pendingQuotes: number;
     averageResponseTimeHours: number | null;
   }> {
+    // Debug: Check all quote requests
+    const allRequests = await db.select().from(quoteRequests);
+    console.log('📊 All quote requests in DB:', allRequests.length);
+    console.log('📊 Quote request statuses:', allRequests.map(r => ({ id: r.id, status: r.status, number: r.requestNumber })));
+
     // Count active quote requests
     const [activeResult] = await db
       .select({ count: sql<number>`count(*)` })
       .from(quoteRequests)
       .where(eq(quoteRequests.status, 'active'));
-    
+
+    console.log('✅ Active requests query result:', activeResult);
+
     // Count total suppliers
     const [suppliersResult] = await db
       .select({ count: sql<number>`count(*)` })
       .from(suppliers);
-    
+
+    console.log('✅ Total suppliers query result:', suppliersResult);
+
     // Count pending documentation quotes (quotes awaiting document upload from suppliers)
     const [pendingResult] = await db
       .select({ count: sql<number>`count(*)` })
       .from(supplierQuotes)
       .where(eq(supplierQuotes.preliminaryApprovalStatus, 'pending_documentation'));
-    
+
+    console.log('Pending quotes query result:', pendingResult);
+
     // Calculate average response time
     const [avgResult] = await db
       .select({
@@ -665,13 +676,17 @@ export class DatabaseStorage implements IStorage {
       .from(supplierQuotes)
       .innerJoin(quoteRequests, eq(supplierQuotes.requestId, quoteRequests.id))
       .where(sql`${supplierQuotes.submittedAt} IS NOT NULL`);
-    
-    return {
+
+    const stats = {
       activeRequests: Number(activeResult.count),
       totalSuppliers: Number(suppliersResult.count),
       pendingQuotes: Number(pendingResult.count),
       averageResponseTimeHours: avgResult.avgHours !== null && avgResult.avgHours !== undefined ? Number(avgResult.avgHours) : null,
     };
+
+    console.log('Admin dashboard stats:', stats);
+
+    return stats;
   }
 
   // Utility

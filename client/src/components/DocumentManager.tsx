@@ -67,10 +67,19 @@ export default function DocumentManager({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch documents
+  // Fetch documents (works for both admins and suppliers)
   const { data: documents = [], isLoading } = useQuery<Document[]>({
-    queryKey: ['/api/supplier/quotes', quoteId, 'documents'],
+    queryKey: ['/api/quotes', quoteId, 'documents'],
     enabled: !!quoteId,
+    queryFn: async () => {
+      const response = await fetch(`/api/quotes/${quoteId}/documents`, {
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch documents');
+      }
+      return response.json();
+    },
   });
 
   // Fetch document requests (what admin requested)
@@ -116,7 +125,7 @@ export default function DocumentManager({
       });
       setSelectedFile(null);
       setDocumentType("");
-      queryClient.invalidateQueries({ queryKey: ['/api/supplier/quotes', quoteId, 'documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/quotes', quoteId, 'documents'] });
     },
     onError: (error: Error) => {
       toast({
@@ -147,7 +156,7 @@ export default function DocumentManager({
         title: "Document Deleted",
         description: "Document has been deleted successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/supplier/quotes', quoteId, 'documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/quotes', quoteId, 'documents'] });
     },
     onError: (error: Error) => {
       toast({

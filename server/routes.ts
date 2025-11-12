@@ -1104,7 +1104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get documents for a quote
+  // Get documents for a quote (supplier access)
   app.get('/api/supplier/quotes/:quoteId/documents', isAuthenticated, requireSupplierAccess, async (req: any, res) => {
     try {
       const supplier = req.supplier;
@@ -1120,6 +1120,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(documents);
     } catch (error) {
       console.error("Error fetching supplier documents:", error);
+      res.status(500).json({ message: "Failed to fetch documents" });
+    }
+  });
+
+  // Get documents for a quote (admin/procurement/supplier access)
+  app.get('/api/quotes/:quoteId/documents', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { quoteId } = req.params;
+
+      // Check if quote exists
+      const quote = await storage.getSupplierQuote(quoteId);
+      if (!quote) {
+        return res.status(404).json({ message: "Quote not found" });
+      }
+
+      // Check access permissions
+      const currentUser = await storage.getUser(userId);
+      const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'procurement';
+      const isQuoteOwner = req.supplier && req.supplier.id === quote.supplierId;
+
+      if (!isAdmin && !isQuoteOwner) {
+        return res.status(403).json({ message: "Access denied to this quote" });
+      }
+
+      const documents = await storage.getSupplierDocuments(quoteId);
+      res.json(documents);
+    } catch (error) {
+      console.error("Error fetching quote documents:", error);
       res.status(500).json({ message: "Failed to fetch documents" });
     }
   });
@@ -1209,7 +1242,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 preliminaryApprovalStatus: 'final_submitted',
               });
 
-              console.log(`✅ All documents complete! Status updated to 'final_submitted'`);
+              // Update document request status to completed
+              await storage.updateDocumentRequestStatus(quoteId, 'completed');
+
+              console.log(`✅ All documents complete! Status updated to 'final_submitted' and document requests marked as 'completed'`);
 
               // Get admin/procurement emails
               const adminUsers = await db.select()

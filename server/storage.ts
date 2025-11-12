@@ -82,6 +82,7 @@ export interface IStorage {
   // Document request operations
   createDocumentRequest(documentRequest: InsertDocumentRequest): Promise<DocumentRequest>;
   updateDocumentRequestEmailSent(id: string, emailSentAt: Date): Promise<void>;
+  updateDocumentRequestStatus(quoteId: string, status: 'pending' | 'completed'): Promise<void>;
   getDocumentRequestsByQuote(quoteId: string): Promise<DocumentRequest[]>;
 
   // Quote request details with all related data
@@ -542,6 +543,13 @@ export class DatabaseStorage implements IStorage {
       .update(documentRequests)
       .set({ emailSentAt })
       .where(eq(documentRequests.id, id));
+  }
+
+  async updateDocumentRequestStatus(quoteId: string, status: 'pending' | 'completed'): Promise<void> {
+    await db
+      .update(documentRequests)
+      .set({ status })
+      .where(eq(documentRequests.quoteId, quoteId));
   }
 
   async getDocumentRequestsByQuote(quoteId: string): Promise<DocumentRequest[]> {

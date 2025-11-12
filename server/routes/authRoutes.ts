@@ -103,6 +103,7 @@ router.get('/verify-magic-link', async (req: Request, res: Response) => {
     const magicLink = await storage.getMagicLinkByTokenHash(tokenHash);
 
     if (!magicLink) {
+      console.error('[Magic Link] Token not found in database');
       return res.status(400).json({ 
         message: 'Invalid or expired login link',
         expired: true,
@@ -110,6 +111,7 @@ router.get('/verify-magic-link', async (req: Request, res: Response) => {
     }
 
     if (magicLink.usedAt) {
+      console.error('[Magic Link] Token already used:', { email: magicLink.email, usedAt: magicLink.usedAt });
       return res.status(400).json({ 
         message: 'This login link has already been used',
         expired: true,
@@ -117,8 +119,13 @@ router.get('/verify-magic-link', async (req: Request, res: Response) => {
     }
 
     if (new Date() > magicLink.expiresAt) {
+      console.error('[Magic Link] Token expired:', { 
+        email: magicLink.email, 
+        expiresAt: magicLink.expiresAt,
+        now: new Date()
+      });
       return res.status(400).json({ 
-        message: 'This login link has expired',
+        message: 'This login link has expired. Please request a new one.',
         expired: true,
       });
     }

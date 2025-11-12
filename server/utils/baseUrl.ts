@@ -7,6 +7,14 @@
  * 3. Fallback to localhost (development only)
  */
 
+/**
+ * Normalizes a base URL by removing trailing slashes.
+ * Prevents double-slash issues when concatenating paths.
+ */
+function normalizeBaseUrl(url: string): string {
+  return url.replace(/\/+$/, '');
+}
+
 export function getBaseUrl(): string {
   // Highest priority: Explicit BASE_URL (for production)
   if (process.env.BASE_URL) {
@@ -15,12 +23,12 @@ export function getBaseUrl(): string {
     if (process.env.NODE_ENV === 'production' && !baseUrl.startsWith('https://')) {
       console.warn('⚠️  BASE_URL should use HTTPS in production:', baseUrl);
     }
-    return baseUrl;
+    return normalizeBaseUrl(baseUrl);
   }
 
   // Second priority: REPLIT_DEV_DOMAIN (auto-set in Replit dev mode)
   if (process.env.REPLIT_DEV_DOMAIN) {
-    return `https://${process.env.REPLIT_DEV_DOMAIN}`;
+    return normalizeBaseUrl(`https://${process.env.REPLIT_DEV_DOMAIN}`);
   }
 
   // Fallback: localhost (development only)
@@ -34,7 +42,7 @@ export function getBaseUrl(): string {
     console.error(`   Example: BASE_URL=https://your-app-name.replit.app`);
   }
 
-  return fallbackUrl;
+  return normalizeBaseUrl(fallbackUrl);
 }
 
 /**

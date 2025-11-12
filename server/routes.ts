@@ -822,6 +822,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete quote request (admin/procurement only)
+  app.delete('/api/quote-requests/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const currentUser = await storage.getUser(userId);
+
+      if (currentUser?.role !== 'admin' && currentUser?.role !== 'procurement') {
+        return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });
+      }
+
+      const { id } = req.params;
+
+      // Check if quote request exists
+      const existingRequest = await storage.getQuoteRequest(id);
+      if (!existingRequest) {
+        return res.status(404).json({ message: "Quote request not found" });
+      }
+
+      // Get all supplier quotes to delete associated documents
+      const quotes = await storage.getSupplierQuotes(id);
+
+      // Delete all documents associated with these quotes
+      for (const quote of quotes) {
+        const documents = await storage.getSupplierDocuments(quote.id);
+        for (const doc of documents) {
+          try {
+            await deleteDocument(doc.fileUrl);
+          } catch (fileError) {
+            console.error(`Error deleting file ${doc.fileUrl}:`, fileError);
+            // Continue with other deletions even if one fails
+          }
+        }
+      }
+
+      // Delete the quote request (cascade will handle DB records)
+      await storage.deleteQuoteRequest(id);
+
+      res.json({ message: "Quote request deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting quote request:", error);
+      res.status(500).json({ message: "Failed to delete quote request" });
+    }
+  });
+
   // Admin dashboard statistics
   app.get('/api/admin/dashboard', isAuthenticated, async (req: any, res) => {
     try {

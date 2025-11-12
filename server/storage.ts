@@ -53,6 +53,7 @@ export interface IStorage {
   getQuoteRequest(id: string): Promise<QuoteRequest | undefined>;
   createQuoteRequest(request: InsertQuoteRequest): Promise<QuoteRequest>;
   updateQuoteRequest(id: string, request: Partial<InsertQuoteRequest>): Promise<QuoteRequest | undefined>;
+  deleteQuoteRequest(id: string): Promise<void>;
   
   // Request supplier operations
   createRequestSupplier(requestSupplier: InsertRequestSupplier): Promise<RequestSupplier>;
@@ -412,6 +413,15 @@ export class DatabaseStorage implements IStorage {
       .where(eq(quoteRequests.id, id))
       .returning();
     return request;
+  }
+
+  async deleteQuoteRequest(id: string): Promise<void> {
+    // Database cascade deletes will handle:
+    // - requestSuppliers entries
+    // - supplierQuotes entries
+    // - supplierDocuments entries (via supplierQuotes cascade)
+    // - documentRequests entries (via supplierQuotes cascade)
+    await db.delete(quoteRequests).where(eq(quoteRequests.id, id));
   }
 
   // Request supplier operations

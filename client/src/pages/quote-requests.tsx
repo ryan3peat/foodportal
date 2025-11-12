@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,8 +19,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, FileText } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, Search, FileText, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import type { QuoteRequest } from "@shared/schema";
 
@@ -39,9 +50,43 @@ const statusColors = {
 export default function QuoteRequests() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [deleteRequestId, setDeleteRequestId] = useState<string | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: requests = [], isLoading } = useQuery<QuoteRequestWithCounts[]>({
     queryKey: ["/api/quote-requests"],
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      const response = await fetch(`/api/quote-requests/${requestId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete quote request');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Quote Request Deleted",
+        description: "The quote request has been deleted successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/quote-requests'] });
+      setDeleteRequestId(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const filteredRequests = requests.filter((request) => {
@@ -205,15 +250,28 @@ export default function QuoteRequests() {
                         {format(new Date(request.createdAt), "MMM d, yyyy")}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Link href={`/quote-requests/${request.id}`}>
-                          <Button 
-                            variant="ghost" 
+                        <div className="flex items-center justify-end gap-2">
+                          <Link href={`/quote-requests/${request.id}`}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              data-testid={`button-view-${request.id}`}
+                            >
+                              View
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="ghost"
                             size="sm"
-                            data-testid={`button-view-${request.id}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteRequestId(request.id);
+                            }}
+                            data-testid={`button-delete-${request.id}`}
                           >
-                            View
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
-                        </Link>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -229,6 +287,28 @@ export default function QuoteRequests() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!deleteRequestId} onOpenChange={(open) => !open && setDeleteRequestId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Quote Request</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this quote request? This action cannot be undone.
+              All supplier quotes and associated documents will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteRequestId && deleteMutation.mutate(deleteRequestId)}
+              disabled={deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

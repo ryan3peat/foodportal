@@ -127,7 +127,7 @@ export default function SupplierDashboard() {
             </div>
           </div>
         )}
-        {request.hasQuote && request.quote?.preliminaryApprovalStatus === 'approved' && (
+        {request.hasQuote && (request.quote?.preliminaryApprovalStatus === 'pending_documentation' || request.quote?.preliminaryApprovalStatus === 'final_submitted') && (
           <div className="pt-2 border-t space-y-2">
             {request.quote.documentsRequested !== undefined && request.quote.documentsRequested > 0 ? (
               <>

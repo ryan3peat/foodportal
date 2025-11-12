@@ -2,11 +2,13 @@ import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
+import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -32,6 +34,22 @@ function PublicRouter() {
   );
 }
 
+function SupplierQuoteRequestsGuard() {
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    toast({
+      title: "Invalid Link",
+      description: "The quote request link appears to be incomplete. Please check your email or access quotes from your dashboard.",
+      variant: "destructive",
+    });
+    navigate('/supplier/dashboard');
+  }, [navigate, toast]);
+
+  return null;
+}
+
 function AuthenticatedRouter() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'procurement';
@@ -48,6 +66,7 @@ function AuthenticatedRouter() {
       {isAdmin && <Route path="/users" component={UserManagement} />}
       {/* Supplier routes */}
       <Route path="/supplier/dashboard" component={SupplierDashboard} />
+      <Route path="/supplier/quote-requests" component={SupplierQuoteRequestsGuard} />
       <Route path="/supplier/quote-requests/:requestId" component={SupplierQuoteDetail} />
       <Route component={NotFound} />
     </Switch>

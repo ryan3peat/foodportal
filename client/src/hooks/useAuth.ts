@@ -6,9 +6,9 @@ export function useAuth() {
     queryKey: ["/api/auth/user"],
     retry: false,
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnMount: true,
     refetchOnReconnect: false,
-    staleTime: Infinity,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Extract error information

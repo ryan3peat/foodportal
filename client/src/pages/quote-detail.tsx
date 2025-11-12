@@ -102,6 +102,41 @@ export default function QuoteDetail() {
     enabled: !!quoteId,
   });
 
+  const updateApprovalMutation = useMutation({
+    mutationFn: async (status: 'approved' | 'rejected') => {
+      const response = await fetch(`/api/supplier/quotes/${quoteId}/preliminary-approval`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update approval status');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data, status) => {
+      toast({
+        title: status === 'approved' ? "Quote Approved" : "Quote Rejected",
+        description: status === 'approved'
+          ? "The quote has been preliminarily approved. You can now request documents from the supplier."
+          : "The quote has been rejected.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/quotes', quoteId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/quote-requests', requestId] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const requestDocumentsMutation = useMutation({
     mutationFn: async (documents: string[]) => {
       const response = await fetch(`/api/quotes/${quoteId}/request-documents`, {
@@ -216,13 +251,40 @@ export default function QuoteDetail() {
           >
             {quote.preliminaryApprovalStatus}
           </Badge>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <FileCheck className="h-4 w-4 mr-2" />
-                Request for Further Documents
+
+          {/* Approval Actions - Only show if quote is pending */}
+          {quote.preliminaryApprovalStatus === 'pending' && (
+            <>
+              <Button
+                variant="outline"
+                className="border-green-500 text-green-600 hover:bg-green-50"
+                onClick={() => updateApprovalMutation.mutate('approved')}
+                disabled={updateApprovalMutation.isPending}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Approve Quote
               </Button>
-            </DialogTrigger>
+              <Button
+                variant="outline"
+                className="border-red-500 text-red-600 hover:bg-red-50"
+                onClick={() => updateApprovalMutation.mutate('rejected')}
+                disabled={updateApprovalMutation.isPending}
+              >
+                <AlertCircle className="h-4 w-4 mr-2" />
+                Reject Quote
+              </Button>
+            </>
+          )}
+
+          {/* Document Request - Only show if quote is approved */}
+          {quote.preliminaryApprovalStatus === 'approved' && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <FileCheck className="h-4 w-4 mr-2" />
+                  Request for Further Documents
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Request Documents from Supplier</DialogTitle>
@@ -267,6 +329,7 @@ export default function QuoteDetail() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          )}
         </div>
       </div>
 

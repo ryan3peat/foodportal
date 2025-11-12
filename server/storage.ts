@@ -692,13 +692,33 @@ export class DatabaseStorage implements IStorage {
   // Utility
   async generateRfqNumber(): Promise<string> {
     const year = new Date().getFullYear();
-    const [result] = await db
-      .select({ count: sql<number>`count(*)` })
+
+    // Get all request numbers for this year to find the highest number
+    const existingRequests = await db
+      .select({ requestNumber: quoteRequests.requestNumber })
       .from(quoteRequests)
       .where(sql`EXTRACT(YEAR FROM created_at) = ${year}`);
-    
-    const count = Number(result.count) + 1;
-    const paddedCount = count.toString().padStart(5, '0');
+
+    // Extract the numeric part from existing request numbers for this year
+    let maxNumber = 0;
+    const prefix = `RFQ-${year}-`;
+
+    for (const request of existingRequests) {
+      if (request.requestNumber.startsWith(prefix)) {
+        const numPart = request.requestNumber.replace(prefix, '');
+        const num = parseInt(numPart, 10);
+        if (!isNaN(num) && num > maxNumber) {
+          maxNumber = num;
+        }
+      }
+    }
+
+    // Increment to get the next number
+    const nextNumber = maxNumber + 1;
+    const paddedCount = nextNumber.toString().padStart(5, '0');
+
+    console.log(`Generated RFQ number: RFQ-${year}-${paddedCount} (previous max: ${maxNumber})`);
+
     return `RFQ-${year}-${paddedCount}`;
   }
 

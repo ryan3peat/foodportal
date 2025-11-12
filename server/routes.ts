@@ -1,6 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { users } from "@shared/schema";
+import { sql } from "drizzle-orm";
 import { setupAuth, isAuthenticated } from "./auth";
 import localPassport from "./auth/localAuth";
 import { hashPassword, validatePasswordComplexity } from "./auth/localAuth";
@@ -1119,6 +1122,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
           mimeType: file.mimetype,
           uploadedBy: userId,
         });
+
+        // Send notification email to admins/procurement staff
+        try {
+          // Get quote details for email
+          const quoteDetails = await storage.getQuoteDetails(quoteId);
+
+          if (quoteDetails) {
+            const { quote, supplier: quoteSupplier, request } = quoteDetails;
+
+            // Get all uploaded documents and requested documents
+            const allUploadedDocs = await storage.getSupplierDocuments(quoteId);
+            const documentRequests = await storage.getDocumentRequestsByQuote(quoteId);
+            const totalRequested = documentRequests.reduce((sum, dr) =>
+              sum + (dr.requestedDocuments as string[]).length, 0
+            );
+
+            // Get admin/procurement emails
+            const adminUsers = await db.select()
+              .from(users)
+              .where(sql`${users.role} IN ('admin', 'procurement') AND ${users.active} = true`);
+
+            const adminEmails = adminUsers
+              .filter(u => u.email)
+              .map(u => u.email as string);
+
+            if (adminEmails.length > 0 && quote.requestId) {
+              const quoteDetailUrl = `${getBaseUrl()}/quote-requests/${quote.requestId}/quotes/${quoteId}`;
+
+              await emailService.sendDocumentUploadNotification(adminEmails, {
+                supplierName: quoteSupplier.supplierName,
+                rfqNumber: request.requestNumber,
+                materialName: request.materialName,
+                documentType,
+                fileName: file.originalname,
+                quoteDetailUrl,
+                totalUploaded: allUploadedDocs.length,
+                totalRequested,
+              });
+
+              console.log(`✅ Document upload notification sent to ${adminEmails.length} admin(s)`);
+            }
+          }
+        } catch (emailError) {
+          // Don't fail the upload if email fails
+          console.error("Failed to send document upload notification email:", emailError);
+        }
 
         res.status(201).json({
           message: "Document uploaded successfully",

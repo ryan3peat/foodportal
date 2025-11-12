@@ -47,80 +47,86 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Active Requests
-              </CardTitle>
-              <div className="h-8 w-8 rounded-full bg-chart-1/10 flex items-center justify-center">
-                <FileText className="h-4 w-4 text-chart-1" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {statsLoading ? (
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" data-testid="loader-active-requests" />
-              ) : (
-                <>
-                  <div className="text-3xl font-bold text-foreground" data-testid="text-active-requests">
-                    {stats?.activeRequests ?? 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {stats?.activeRequests === 0 ? 'No active quote requests' : 'Active quote requests'}
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          <Link href="/quote-requests">
+            <Card className="hover-elevate cursor-pointer transition-all">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  Active Requests
+                </CardTitle>
+                <div className="h-8 w-8 rounded-full bg-chart-1/10 flex items-center justify-center">
+                  <FileText className="h-4 w-4 text-chart-1" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                {statsLoading ? (
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" data-testid="loader-active-requests" />
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold text-foreground" data-testid="text-active-requests">
+                      {stats?.activeRequests ?? 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {stats?.activeRequests === 0 ? 'No active quote requests' : 'Click to view all requests'}
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Total Suppliers
-              </CardTitle>
-              <div className="h-8 w-8 rounded-full bg-chart-2/10 flex items-center justify-center">
-                <Users className="h-4 w-4 text-chart-2" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {statsLoading ? (
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" data-testid="loader-total-suppliers" />
-              ) : (
-                <>
-                  <div className="text-3xl font-bold text-foreground" data-testid="text-total-suppliers">
-                    {stats?.totalSuppliers ?? 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {stats?.totalSuppliers === 0 ? 'Ready to add suppliers' : 'Suppliers in directory'}
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          <Link href="/suppliers">
+            <Card className="hover-elevate cursor-pointer transition-all">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  Total Suppliers
+                </CardTitle>
+                <div className="h-8 w-8 rounded-full bg-chart-2/10 flex items-center justify-center">
+                  <Users className="h-4 w-4 text-chart-2" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                {statsLoading ? (
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" data-testid="loader-total-suppliers" />
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold text-foreground" data-testid="text-total-suppliers">
+                      {stats?.totalSuppliers ?? 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {stats?.totalSuppliers === 0 ? 'Ready to add suppliers' : 'Click to manage suppliers'}
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Pending Quotes
-              </CardTitle>
-              <div className="h-8 w-8 rounded-full bg-chart-3/10 flex items-center justify-center">
-                <Clock className="h-4 w-4 text-chart-3" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {statsLoading ? (
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" data-testid="loader-pending-quotes" />
-              ) : (
-                <>
-                  <div className="text-3xl font-bold text-foreground" data-testid="text-pending-quotes">
-                    {stats?.pendingQuotes ?? 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {stats?.pendingQuotes === 0 ? 'Awaiting submissions' : 'Quotes awaiting review'}
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          <Link href="/quote-requests">
+            <Card className="hover-elevate cursor-pointer transition-all">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  Pending Docs
+                </CardTitle>
+                <div className="h-8 w-8 rounded-full bg-chart-3/10 flex items-center justify-center">
+                  <Clock className="h-4 w-4 text-chart-3" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                {statsLoading ? (
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" data-testid="loader-pending-quotes" />
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold text-foreground" data-testid="text-pending-quotes">
+                      {stats?.pendingQuotes ?? 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {stats?.pendingQuotes === 0 ? 'No pending documentation' : 'Awaiting supplier documents'}
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

@@ -11,9 +11,10 @@ import { format } from "date-fns";
 interface DashboardStats {
   totalRequests: number;
   ongoing: number;
-  outstanding: number;
+  pendingDocumentation: number;  // Renamed from 'approved' - quotes awaiting doc upload
   expired: number;
-  approved: number;
+  finalSubmitted: number;
+  initialSubmitted: number;
   quotesSubmitted: number;
 }
 
@@ -50,12 +51,15 @@ export default function SupplierDashboard() {
 
   // Categorize requests
   const ongoingRequests = quoteRequests?.filter(qr => !qr.hasQuote && !qr.isExpired) || [];
-  const outstandingRequests = quoteRequests?.filter(qr => 
-    qr.hasQuote && qr.quote?.preliminaryApprovalStatus === 'pending'
+  const initialSubmittedRequests = quoteRequests?.filter(qr =>
+    qr.hasQuote && qr.quote?.preliminaryApprovalStatus === 'initial_submitted'
   ) || [];
   const expiredRequests = quoteRequests?.filter(qr => !qr.hasQuote && qr.isExpired) || [];
-  const approvedRequests = quoteRequests?.filter(qr =>
-    qr.hasQuote && qr.quote?.preliminaryApprovalStatus === 'approved'
+  const pendingDocumentationRequests = quoteRequests?.filter(qr =>
+    qr.hasQuote && qr.quote?.preliminaryApprovalStatus === 'pending_documentation'
+  ) || [];
+  const finalSubmittedRequests = quoteRequests?.filter(qr =>
+    qr.hasQuote && qr.quote?.preliminaryApprovalStatus === 'final_submitted'
   ) || [];
 
   const QuoteRequestCard = ({ request }: { request: QuoteRequest }) => (
@@ -68,15 +72,19 @@ export default function SupplierDashboard() {
                 {request.materialName}
               </CardTitle>
               {request.hasQuote && request.quote && (
-                <Badge 
+                <Badge
                   variant={
-                    request.quote.preliminaryApprovalStatus === 'approved' ? 'default' :
+                    request.quote.preliminaryApprovalStatus === 'pending_documentation' ? 'default' :
+                    request.quote.preliminaryApprovalStatus === 'final_submitted' ? 'default' :
                     request.quote.preliminaryApprovalStatus === 'rejected' ? 'destructive' :
                     'secondary'
                   }
                   data-testid={`badge-approval-${request.id}`}
                 >
-                  {request.quote.preliminaryApprovalStatus}
+                  {request.quote.preliminaryApprovalStatus === 'pending_documentation' ? 'Pending Documentation' :
+                   request.quote.preliminaryApprovalStatus === 'initial_submitted' ? 'Initial Submitted' :
+                   request.quote.preliminaryApprovalStatus === 'final_submitted' ? 'Final Submitted' :
+                   request.quote.preliminaryApprovalStatus}
                 </Badge>
               )}
               {request.isExpired && !request.hasQuote && (
@@ -119,7 +127,7 @@ export default function SupplierDashboard() {
             </div>
           </div>
         )}
-        {request.hasQuote && request.quote?.preliminaryApprovalStatus === 'approved' && (
+        {request.hasQuote && (request.quote?.preliminaryApprovalStatus === 'pending_documentation' || request.quote?.preliminaryApprovalStatus === 'final_submitted') && (
           <div className="pt-2 border-t space-y-2">
             {request.quote.documentsRequested !== undefined && request.quote.documentsRequested > 0 ? (
               <>
@@ -155,12 +163,12 @@ export default function SupplierDashboard() {
             variant={request.hasQuote ? "outline" : "default"}
             data-testid={`button-view-request-${request.id}`}
           >
-            {request.hasQuote && request.quote?.preliminaryApprovalStatus === 'approved' && 
-             request.quote.documentsRequested && request.quote.documentsRequested > 0 && 
+            {request.hasQuote && request.quote?.preliminaryApprovalStatus === 'pending_documentation' &&
+             request.quote.documentsRequested && request.quote.documentsRequested > 0 &&
              (request.quote.documentsUploaded || 0) < request.quote.documentsRequested
               ? 'Upload Documents'
-              : request.hasQuote 
-              ? 'View Quote' 
+              : request.hasQuote
+              ? 'View Quote'
               : 'Submit Quote'}
           </Button>
         </Link>
@@ -217,18 +225,18 @@ export default function SupplierDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Under Review
+                Pending Docs
               </CardTitle>
               <div className="h-8 w-8 rounded-full bg-chart-4/10 flex items-center justify-center">
-                <Clock className="h-4 w-4 text-chart-4" />
+                <Upload className="h-4 w-4 text-chart-4" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground" data-testid="stat-outstanding">
-                {stats?.outstanding || 0}
+              <div className="text-3xl font-bold text-foreground" data-testid="stat-pending-documentation">
+                {stats?.pendingDocumentation || 0}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Pending approval
+                Documents required
               </p>
             </CardContent>
           </Card>
@@ -236,18 +244,18 @@ export default function SupplierDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Approved
+                Final Submitted
               </CardTitle>
               <div className="h-8 w-8 rounded-full bg-chart-1/10 flex items-center justify-center">
                 <CheckCircle2 className="h-4 w-4 text-chart-1" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground" data-testid="stat-approved">
-                {stats?.approved || 0}
+              <div className="text-3xl font-bold text-foreground" data-testid="stat-final-submitted">
+                {stats?.finalSubmitted || 0}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Ready for documents
+                Complete submissions
               </p>
             </CardContent>
           </Card>
@@ -283,11 +291,11 @@ export default function SupplierDashboard() {
                 <TabsTrigger value="ongoing" data-testid="tab-ongoing">
                   Ongoing ({ongoingRequests.length})
                 </TabsTrigger>
-                <TabsTrigger value="outstanding" data-testid="tab-outstanding">
-                  Under Review ({outstandingRequests.length})
+                <TabsTrigger value="pending-docs" data-testid="tab-pending-docs">
+                  Pending Docs ({pendingDocumentationRequests.length})
                 </TabsTrigger>
-                <TabsTrigger value="approved" data-testid="tab-approved">
-                  Approved ({approvedRequests.length})
+                <TabsTrigger value="final-submitted" data-testid="tab-final-submitted">
+                  Final Submitted ({finalSubmittedRequests.length})
                 </TabsTrigger>
                 <TabsTrigger value="expired" data-testid="tab-expired">
                   Expired ({expiredRequests.length})
@@ -310,32 +318,32 @@ export default function SupplierDashboard() {
                 )}
               </TabsContent>
 
-              <TabsContent value="outstanding" className="space-y-4">
-                {outstandingRequests.length === 0 ? (
+              <TabsContent value="pending-docs" className="space-y-4">
+                {pendingDocumentationRequests.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
-                    <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No quotes under review</p>
-                    <p className="text-sm mt-2">Submitted quotes awaiting approval will appear here</p>
+                    <Upload className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No pending documentation</p>
+                    <p className="text-sm mt-2">Quotes requiring document uploads will appear here</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {outstandingRequests.map(request => (
+                    {pendingDocumentationRequests.map(request => (
                       <QuoteRequestCard key={request.id} request={request} />
                     ))}
                   </div>
                 )}
               </TabsContent>
 
-              <TabsContent value="approved" className="space-y-4">
-                {approvedRequests.length === 0 ? (
+              <TabsContent value="final-submitted" className="space-y-4">
+                {finalSubmittedRequests.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <CheckCircle2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No approved quotes yet</p>
-                    <p className="text-sm mt-2">Approved quotes ready for document upload will appear here</p>
+                    <p>No final submissions yet</p>
+                    <p className="text-sm mt-2">Quotes with all documentation complete will appear here</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {approvedRequests.map(request => (
+                    {finalSubmittedRequests.map(request => (
                       <QuoteRequestCard key={request.id} request={request} />
                     ))}
                   </div>

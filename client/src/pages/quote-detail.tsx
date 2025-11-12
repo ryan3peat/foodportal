@@ -48,7 +48,7 @@ interface QuoteDetails {
     shelfLife: string | null;
     storageRequirements: string | null;
     dangerousGoodsHandling: string | null;
-    preliminaryApprovalStatus: 'pending' | 'approved' | 'rejected';
+    preliminaryApprovalStatus: 'initial_submitted' | 'pending_documentation' | 'final_submitted' | 'rejected';
     submittedAt: string;
   };
   supplier: {
@@ -71,9 +71,17 @@ interface QuoteDetails {
 }
 
 const approvalStatusColors = {
-  pending: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
-  approved: "bg-green-500/10 text-green-600 border-green-500/20",
+  initial_submitted: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  pending_documentation: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  final_submitted: "bg-green-500/10 text-green-600 border-green-500/20",
   rejected: "bg-red-500/10 text-red-600 border-red-500/20",
+};
+
+const approvalStatusLabels = {
+  initial_submitted: "Initial Submitted",
+  pending_documentation: "Pending Documentation",
+  final_submitted: "Final Submitted",
+  rejected: "Rejected",
 };
 
 const DOCUMENT_TYPES = [
@@ -105,13 +113,13 @@ export default function QuoteDetail() {
   // Fetch document requests for this quote
   const { data: documentRequests = [] } = useQuery<Array<{ id: string; requestedDocuments: string[]; requestedAt: string; status: string }>>({
     queryKey: ['/api/quotes', quoteId, 'document-requests'],
-    enabled: !!quoteId && data?.quote.preliminaryApprovalStatus === 'approved',
+    enabled: !!quoteId && (data?.quote.preliminaryApprovalStatus === 'pending_documentation' || data?.quote.preliminaryApprovalStatus === 'final_submitted'),
   });
 
   // Fetch uploaded documents for this quote
   const { data: uploadedDocuments = [] } = useQuery<Array<{ id: string; documentType: string; fileName: string; uploadedAt: string }>>({
     queryKey: ['/api/supplier/quotes', quoteId, 'documents'],
-    enabled: !!quoteId && data?.quote.preliminaryApprovalStatus === 'approved',
+    enabled: !!quoteId && (data?.quote.preliminaryApprovalStatus === 'pending_documentation' || data?.quote.preliminaryApprovalStatus === 'final_submitted'),
   });
 
   // Calculate document status
@@ -121,7 +129,7 @@ export default function QuoteDetail() {
   const documentsComplete = allRequestedDocs.length > 0 && missingDocs.length === 0;
 
   const updateApprovalMutation = useMutation({
-    mutationFn: async (status: 'approved' | 'rejected') => {
+    mutationFn: async (status: 'pending_documentation' | 'rejected') => {
       const response = await fetch(`/api/supplier/quotes/${quoteId}/preliminary-approval`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -138,9 +146,9 @@ export default function QuoteDetail() {
     },
     onSuccess: (data, status) => {
       toast({
-        title: status === 'approved' ? "Quote Approved" : "Quote Rejected",
-        description: status === 'approved'
-          ? "The quote has been preliminarily approved. You can now request documents from the supplier."
+        title: status === 'pending_documentation' ? "Documentation Requested" : "Quote Rejected",
+        description: status === 'pending_documentation'
+          ? "Status updated to 'Pending Documentation'. You can now request specific documents from the supplier."
           : "The quote has been rejected.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/quotes', quoteId] });
@@ -265,22 +273,22 @@ export default function QuoteDetail() {
         <div className="flex items-center gap-2">
           <Badge
             variant="outline"
-            className={`${approvalStatusColors[quote.preliminaryApprovalStatus]} uppercase text-xs font-semibold`}
+            className={`${approvalStatusColors[quote.preliminaryApprovalStatus]} text-xs font-semibold`}
           >
-            {quote.preliminaryApprovalStatus}
+            {approvalStatusLabels[quote.preliminaryApprovalStatus]}
           </Badge>
 
-          {/* Approval Actions - Only show if quote is pending */}
-          {quote.preliminaryApprovalStatus === 'pending' && (
+          {/* Actions - Only show if quote is initial_submitted (awaiting admin review) */}
+          {quote.preliminaryApprovalStatus === 'initial_submitted' && (
             <>
               <Button
                 variant="outline"
-                className="border-green-500 text-green-600 hover:bg-green-50"
-                onClick={() => updateApprovalMutation.mutate('approved')}
+                className="border-amber-500 text-amber-600 hover:bg-amber-50"
+                onClick={() => updateApprovalMutation.mutate('pending_documentation')}
                 disabled={updateApprovalMutation.isPending}
               >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Approve Quote
+                <FileCheck className="h-4 w-4 mr-2" />
+                Request Documentation
               </Button>
               <Button
                 variant="outline"
@@ -294,13 +302,15 @@ export default function QuoteDetail() {
             </>
           )}
 
-          {/* Document Request - Only show if quote is approved */}
-          {quote.preliminaryApprovalStatus === 'approved' && (
+          {/* Document Request Dialog - Only show if quote is pending_documentation or final_submitted */}
+          {(quote.preliminaryApprovalStatus === 'pending_documentation' || quote.preliminaryApprovalStatus === 'final_submitted') && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button disabled={quote.preliminaryApprovalStatus === 'final_submitted'}>
                   <FileCheck className="h-4 w-4 mr-2" />
-                  Request for Further Documents
+                  {quote.preliminaryApprovalStatus === 'final_submitted'
+                    ? 'All Documents Received'
+                    : 'Request Additional Documents'}
                 </Button>
               </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -572,7 +582,7 @@ export default function QuoteDetail() {
       )}
 
       {/* Documents Section */}
-      {quote.preliminaryApprovalStatus === 'approved' && allRequestedDocs.length > 0 && (
+      {(quote.preliminaryApprovalStatus === 'pending_documentation' || quote.preliminaryApprovalStatus === 'final_submitted') && allRequestedDocs.length > 0 && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">

@@ -53,6 +53,7 @@ export interface IStorage {
   getQuoteRequest(id: string): Promise<QuoteRequest | undefined>;
   createQuoteRequest(request: InsertQuoteRequest): Promise<QuoteRequest>;
   updateQuoteRequest(id: string, request: Partial<InsertQuoteRequest>): Promise<QuoteRequest | undefined>;
+  deleteQuoteRequest(id: string): Promise<void>;
   
   // Request supplier operations
   createRequestSupplier(requestSupplier: InsertRequestSupplier): Promise<RequestSupplier>;
@@ -81,6 +82,7 @@ export interface IStorage {
   // Document request operations
   createDocumentRequest(documentRequest: InsertDocumentRequest): Promise<DocumentRequest>;
   updateDocumentRequestEmailSent(id: string, emailSentAt: Date): Promise<void>;
+  updateDocumentRequestStatus(quoteId: string, status: 'pending' | 'completed'): Promise<void>;
   getDocumentRequestsByQuote(quoteId: string): Promise<DocumentRequest[]>;
 
   // Quote request details with all related data
@@ -414,6 +416,15 @@ export class DatabaseStorage implements IStorage {
     return request;
   }
 
+  async deleteQuoteRequest(id: string): Promise<void> {
+    // Database cascade deletes will handle:
+    // - requestSuppliers entries
+    // - supplierQuotes entries
+    // - supplierDocuments entries (via supplierQuotes cascade)
+    // - documentRequests entries (via supplierQuotes cascade)
+    await db.delete(quoteRequests).where(eq(quoteRequests.id, id));
+  }
+
   // Request supplier operations
   async createRequestSupplier(requestSupplierData: InsertRequestSupplier): Promise<RequestSupplier> {
     const [requestSupplier] = await db.insert(requestSuppliers).values(requestSupplierData).returning();
@@ -534,6 +545,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(documentRequests.id, id));
   }
 
+  async updateDocumentRequestStatus(quoteId: string, status: 'pending' | 'completed'): Promise<void> {
+    await db
+      .update(documentRequests)
+      .set({ status })
+      .where(eq(documentRequests.quoteId, quoteId));
+  }
+
   async getDocumentRequestsByQuote(quoteId: string): Promise<DocumentRequest[]> {
     return await db
       .select()
@@ -631,11 +649,11 @@ export class DatabaseStorage implements IStorage {
       .select({ count: sql<number>`count(*)` })
       .from(suppliers);
     
-    // Count pending quotes
+    // Count pending documentation quotes (quotes awaiting document upload from suppliers)
     const [pendingResult] = await db
       .select({ count: sql<number>`count(*)` })
       .from(supplierQuotes)
-      .where(eq(supplierQuotes.preliminaryApprovalStatus, 'pending'));
+      .where(eq(supplierQuotes.preliminaryApprovalStatus, 'pending_documentation'));
     
     // Calculate average response time
     const [avgResult] = await db

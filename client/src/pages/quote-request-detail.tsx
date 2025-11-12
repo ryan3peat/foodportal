@@ -1,9 +1,21 @@
-import { useRoute, Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useRoute, Link, useLocation } from "wouter";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CheckCircle, Calendar, DollarSign, TrendingDown } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, CheckCircle, Calendar, DollarSign, TrendingDown, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 
 interface QuoteRequestDetails {
@@ -47,11 +59,46 @@ const statusColors = {
 
 export default function QuoteRequestDetail() {
   const [, params] = useRoute("/quote-requests/:id");
+  const [, setLocation] = useLocation();
   const requestId = params?.id;
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery<QuoteRequestDetails>({
     queryKey: ['/api/quote-requests', requestId],
     enabled: !!requestId,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/quote-requests/${requestId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete quote request');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Quote Request Deleted",
+        description: "The quote request has been deleted successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/quote-requests'] });
+      setLocation('/quote-requests');
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   if (isLoading) {
@@ -121,13 +168,24 @@ export default function QuoteRequestDetail() {
             </p>
           </div>
         </div>
-        <Badge
-          variant="outline"
-          className={`${statusColors[request.status]} uppercase text-xs font-semibold`}
-          data-testid="badge-status"
-        >
-          {request.status}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge
+            variant="outline"
+            className={`${statusColors[request.status]} uppercase text-xs font-semibold`}
+            data-testid="badge-status"
+          >
+            {request.status}
+          </Badge>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setShowDeleteDialog(true)}
+            data-testid="button-delete-request"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete Request
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
@@ -312,6 +370,28 @@ export default function QuoteRequestDetail() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Quote Request</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this quote request? This action cannot be undone.
+              All supplier quotes and associated documents will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

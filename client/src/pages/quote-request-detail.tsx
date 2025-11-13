@@ -161,7 +161,7 @@ export default function QuoteRequestDetail() {
           </Link>
           <div>
             <h1 className="text-2xl font-semibold text-foreground" data-testid="text-rfq-number">
-              {request.requestNumber}
+              {request.requestNumber} • {request.materialName}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               View and compare supplier quotes
@@ -236,43 +236,6 @@ export default function QuoteRequestDetail() {
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Material Details</CardTitle>
-          <CardDescription>Quote request specifications</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Material Name</p>
-              <p className="text-base font-medium" data-testid="text-material-name">
-                {request.materialName}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Quantity Needed</p>
-              <p className="text-base font-medium">
-                {request.quantityNeeded} {request.unitOfMeasure}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">CAS Number</p>
-              <p className="text-base font-medium">{request.casNumber || "—"}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">FEMA Number</p>
-              <p className="text-base font-medium">{request.femaNumber || "—"}</p>
-            </div>
-          </div>
-          {request.additionalSpecifications && (
-            <div className="mt-4">
-              <p className="text-sm font-medium text-muted-foreground">Additional Specifications</p>
-              <p className="text-base">{request.additionalSpecifications}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>
@@ -366,6 +329,43 @@ export default function QuoteRequestDetail() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Material Details</CardTitle>
+          <CardDescription>Quote request specifications</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-4">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Material Name</p>
+              <p className="text-base font-medium" data-testid="text-material-name">
+                {request.materialName}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Quantity Needed</p>
+              <p className="text-base font-medium">
+                {request.quantityNeeded} {request.unitOfMeasure}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">CAS Number</p>
+              <p className="text-base font-medium">{request.casNumber || "—"}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">FEMA Number</p>
+              <p className="text-base font-medium">{request.femaNumber || "—"}</p>
+            </div>
+          </div>
+          {request.additionalSpecifications && (
+            <div className="mt-4">
+              <p className="text-sm font-medium text-muted-foreground">Additional Specifications</p>
+              <p className="text-base">{request.additionalSpecifications}</p>
             </div>
           )}
         </CardContent>

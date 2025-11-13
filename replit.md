@@ -49,7 +49,10 @@ The portal adheres to Material Design principles, utilizing the Roboto font fami
 -   **Replit Object Storage:** For file uploads.
 -   **Microsoft Graph API:** Production email service for magic links and RFQ notifications.
 
-## Recent Changes (November 12, 2025)
+## Recent Changes (November 13, 2025)
+-   **Enhanced Document Error Handling:** Implemented comprehensive handling for ephemeral filesystem document loss while preserving database records. Added `fileExists` flag to all document API responses (GET `/api/quotes/:quoteId/documents`). Changed download endpoint error from 404 to 410 Gone with actionable JSON response including document metadata and re-upload guidance. Updated DocumentManager UI to visually distinguish missing files with amber borders, AlertCircle icons, disabled download buttons, and clear warning text: "File missing – please re-upload from the Upload Document section". Enhanced download handler to parse 410 responses and display server-provided suggestions via toast notifications. Added comprehensive data-testid attributes for automated testing.
+
+## Previous Changes (November 12, 2025)
 -   **URL Normalization Fix:** Fixed double-slash bug in magic link and document request emails. Added `normalizeBaseUrl()` helper that strips trailing slashes from BASE_URL before path concatenation. All email URLs now correctly formatted (e.g., `/verify-login` instead of `//verify-login`). Centralized URL construction exclusively through `getBaseUrl()` utility to prevent future recurrence.
 
 ## Previous Changes (November 11, 2025)

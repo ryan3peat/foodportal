@@ -118,7 +118,7 @@ export default function QuoteDetail() {
 
   // Fetch uploaded documents for this quote
   const { data: uploadedDocuments = [] } = useQuery<Array<{ id: string; documentType: string; fileName: string; uploadedAt: string }>>({
-    queryKey: ['/api/supplier/quotes', quoteId, 'documents'],
+    queryKey: ['/api/quotes', quoteId, 'documents'],
     enabled: !!quoteId && (data?.quote.preliminaryApprovalStatus === 'pending_documentation' || data?.quote.preliminaryApprovalStatus === 'final_submitted'),
   });
 

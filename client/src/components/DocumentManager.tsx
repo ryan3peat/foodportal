@@ -126,10 +126,11 @@ export default function DocumentManager({
       });
       setSelectedFile(null);
       setDocumentType("");
-      queryClient.invalidateQueries({ queryKey: ['/api/quotes', quoteId, 'documents'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/quotes', quoteId, 'document-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/supplier/dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/supplier/quote-requests'] });
+      // Use refetchQueries to force immediate refetch (staleTime: Infinity prevents auto-refetch on invalidate)
+      queryClient.refetchQueries({ queryKey: ['/api/quotes', quoteId, 'documents'] });
+      queryClient.refetchQueries({ queryKey: ['/api/quotes', quoteId, 'document-requests'] });
+      queryClient.refetchQueries({ queryKey: ['/api/supplier/dashboard'] });
+      queryClient.refetchQueries({ queryKey: ['/api/supplier/quote-requests'] });
     },
     onError: (error: Error) => {
       toast({
@@ -160,10 +161,11 @@ export default function DocumentManager({
         title: "Document Deleted",
         description: "Document has been deleted successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/quotes', quoteId, 'documents'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/quotes', quoteId, 'document-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/supplier/dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/supplier/quote-requests'] });
+      // Use refetchQueries to force immediate refetch (staleTime: Infinity prevents auto-refetch on invalidate)
+      queryClient.refetchQueries({ queryKey: ['/api/quotes', quoteId, 'documents'] });
+      queryClient.refetchQueries({ queryKey: ['/api/quotes', quoteId, 'document-requests'] });
+      queryClient.refetchQueries({ queryKey: ['/api/supplier/dashboard'] });
+      queryClient.refetchQueries({ queryKey: ['/api/supplier/quote-requests'] });
     },
     onError: (error: Error) => {
       toast({
@@ -245,7 +247,7 @@ export default function DocumentManager({
           variant: "destructive",
         });
         // Refresh document list to show updated status
-        queryClient.invalidateQueries({ queryKey: ['/api/quotes', quoteId, 'documents'] });
+        queryClient.refetchQueries({ queryKey: ['/api/quotes', quoteId, 'documents'] });
         return;
       }
 

@@ -278,6 +278,74 @@ export default function SupplierQuoteDetail() {
           )}
         </Card>
 
+        {/* Document Upload Section or Status Message */}
+        {hasQuote && quote && (
+          <div>
+            {quote.preliminaryApprovalStatus === 'pending_documentation' ||
+             quote.preliminaryApprovalStatus === 'final_submitted' ? (
+              <>
+                <div className="mb-4 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    <div>
+                      <h3 className="font-semibold text-green-900 dark:text-green-100">
+                        {quote.preliminaryApprovalStatus === 'final_submitted'
+                          ? 'All Documents Submitted'
+                          : 'Documents Requested - Action Required'}
+                      </h3>
+                      <p className="text-sm text-green-800 dark:text-green-200">
+                        {quote.preliminaryApprovalStatus === 'final_submitted'
+                          ? 'All requested documents have been uploaded. Awaiting final review.'
+                          : 'Please upload the requested documents below.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <DocumentManager
+                  quoteId={quote.id}
+                  canUpload={quote.preliminaryApprovalStatus !== 'final_submitted'}
+                  canDelete={quote.preliminaryApprovalStatus !== 'final_submitted'}
+                />
+              </>
+            ) : quote.preliminaryApprovalStatus === 'initial_submitted' ? (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-1">
+                        Quote Under Review
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Your quote is currently being reviewed by Essential Flavours.
+                        You'll be able to upload documents once additional information is requested.
+                        We'll notify you via email when any action is required.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-1">
+                        Quote Not Selected
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Unfortunately, your quote was not selected for this request.
+                        Thank you for your submission.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
         {/* Quote Submission Form */}
         <Card>
           <CardHeader>
@@ -537,74 +605,6 @@ export default function SupplierQuoteDetail() {
             </Form>
           </CardContent>
         </Card>
-
-        {/* Document Upload Section or Status Message */}
-        {hasQuote && quote && (
-          <div>
-            {quote.preliminaryApprovalStatus === 'pending_documentation' ||
-             quote.preliminaryApprovalStatus === 'final_submitted' ? (
-              <>
-                <div className="mb-4 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    <div>
-                      <h3 className="font-semibold text-green-900 dark:text-green-100">
-                        {quote.preliminaryApprovalStatus === 'final_submitted'
-                          ? 'All Documents Submitted'
-                          : 'Documents Requested - Action Required'}
-                      </h3>
-                      <p className="text-sm text-green-800 dark:text-green-200">
-                        {quote.preliminaryApprovalStatus === 'final_submitted'
-                          ? 'All requested documents have been uploaded. Awaiting final review.'
-                          : 'Please upload the requested documents below.'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <DocumentManager
-                  quoteId={quote.id}
-                  canUpload={quote.preliminaryApprovalStatus !== 'final_submitted'}
-                  canDelete={quote.preliminaryApprovalStatus !== 'final_submitted'}
-                />
-              </>
-            ) : quote.preliminaryApprovalStatus === 'initial_submitted' ? (
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold text-foreground mb-1">
-                        Quote Under Review
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Your quote is currently being reviewed by Essential Flavours.
-                        You'll be able to upload documents once additional information is requested.
-                        We'll notify you via email when any action is required.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold text-foreground mb-1">
-                        Quote Not Selected
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Unfortunately, your quote was not selected for this request.
-                        Thank you for your submission.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

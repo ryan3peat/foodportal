@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,7 @@ interface QuoteRequest {
 
 export default function SupplierDashboard() {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState("ongoing");
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ['/api/supplier/dashboard'],
@@ -203,7 +205,11 @@ export default function SupplierDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
+          <Card 
+            className="hover-elevate cursor-pointer transition-all" 
+            onClick={() => setActiveTab("ongoing")}
+            data-testid="card-stat-ongoing"
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 Ongoing Requests
@@ -222,7 +228,11 @@ export default function SupplierDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className="hover-elevate cursor-pointer transition-all" 
+            onClick={() => setActiveTab("pending-docs")}
+            data-testid="card-stat-pending-docs"
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 Pending Docs
@@ -241,7 +251,11 @@ export default function SupplierDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className="hover-elevate cursor-pointer transition-all" 
+            onClick={() => setActiveTab("final-submitted")}
+            data-testid="card-stat-final-submitted"
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 Final Submitted
@@ -260,7 +274,11 @@ export default function SupplierDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className="hover-elevate cursor-pointer transition-all" 
+            onClick={() => setActiveTab("expired")}
+            data-testid="card-stat-expired"
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 Expired
@@ -286,7 +304,7 @@ export default function SupplierDashboard() {
             <CardTitle className="text-xl font-semibold">Your Quote Requests</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="ongoing" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="ongoing" data-testid="tab-ongoing">
                   Ongoing ({ongoingRequests.length})

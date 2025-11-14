@@ -127,6 +127,9 @@ export default function DocumentManager({
       setSelectedFile(null);
       setDocumentType("");
       queryClient.invalidateQueries({ queryKey: ['/api/quotes', quoteId, 'documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/quotes', quoteId, 'document-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/supplier/dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/supplier/quote-requests'] });
     },
     onError: (error: Error) => {
       toast({
@@ -158,6 +161,9 @@ export default function DocumentManager({
         description: "Document has been deleted successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/quotes', quoteId, 'documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/quotes', quoteId, 'document-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/supplier/dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/supplier/quote-requests'] });
     },
     onError: (error: Error) => {
       toast({

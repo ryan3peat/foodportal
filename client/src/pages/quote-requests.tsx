@@ -166,7 +166,7 @@ export default function QuoteRequests() {
                 />
               </div>
             </div>
-            <Select value={statusFilter} onValueChange={handleFilterChange}>
+            <Select key={statusFilter} value={statusFilter} onValueChange={handleFilterChange}>
               <SelectTrigger className="w-full md:w-[200px]" data-testid="select-status-filter">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>

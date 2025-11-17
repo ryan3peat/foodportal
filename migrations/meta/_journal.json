@@ -15,6 +15,13 @@
       "when": 1762833022079,
       "tag": "0001_add-document-requests",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1763375990961,
+      "tag": "0002_modern_inertia",
+      "breakpoints": true
     }
   ]
 }

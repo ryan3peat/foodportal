@@ -122,12 +122,17 @@ export default function QuoteRequests() {
     let matchesStatus = true;
     if (statusFilter === "pending-docs") {
       matchesStatus = request.hasPendingDocs === true;
+      // Debug logging
+      console.log(`[DEBUG] Filtering for pending-docs: Request ${request.requestNumber}, hasPendingDocs=${request.hasPendingDocs}, matches=${matchesStatus}`);
     } else if (statusFilter !== "all") {
       matchesStatus = request.status === statusFilter;
     }
 
     return matchesSearch && matchesStatus;
   });
+
+  // Debug logging for filter state
+  console.log(`[DEBUG] Current statusFilter: "${statusFilter}", Total requests: ${requests.length}, Filtered: ${filteredRequests.length}`);
 
   return (
     <div className="p-6 space-y-6">

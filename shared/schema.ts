@@ -45,6 +45,7 @@ export const documentTypeEnum = pgEnum('document_type', [
   'organic'
 ]);
 export const documentRequestStatusEnum = pgEnum('document_request_status', ['pending', 'completed']);
+export const notificationTypeEnum = pgEnum('notification_type', ['documentation_complete']);
 
 // ============================================================================
 // TABLE DEFINITIONS
@@ -219,6 +220,23 @@ export const documentRequests = pgTable("document_requests", {
   index("idx_document_requests_quote_id").on(table.quoteId),
 ]);
 
+// Notifications table (for in-app notifications to admin/procurement users)
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  type: notificationTypeEnum("type").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  relatedQuoteId: uuid("related_quote_id").references(() => supplierQuotes.id, { onDelete: 'cascade' }),
+  relatedRequestId: uuid("related_request_id").references(() => quoteRequests.id, { onDelete: 'cascade' }),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_notifications_user_id").on(table.userId),
+  index("idx_notifications_is_read").on(table.isRead),
+  index("idx_notifications_created_at").on(table.createdAt),
+]);
+
 // ============================================================================
 // RELATIONS
 // ============================================================================
@@ -226,6 +244,7 @@ export const documentRequests = pgTable("document_requests", {
 export const usersRelations = relations(users, ({ many }) => ({
   suppliersCreated: many(suppliers),
   quoteRequestsCreated: many(quoteRequests),
+  notifications: many(notifications),
 }));
 
 export const suppliersRelations = relations(suppliers, ({ one, many }) => ({
@@ -292,6 +311,21 @@ export const documentRequestsRelations = relations(documentRequests, ({ one }) =
   }),
 }));
 
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+  relatedQuote: one(supplierQuotes, {
+    fields: [notifications.relatedQuoteId],
+    references: [supplierQuotes.id],
+  }),
+  relatedRequest: one(quoteRequests, {
+    fields: [notifications.relatedRequestId],
+    references: [quoteRequests.id],
+  }),
+}));
+
 // ============================================================================
 // TYPE EXPORTS
 // ============================================================================
@@ -319,6 +353,9 @@ export type SupplierDocument = typeof supplierDocuments.$inferSelect;
 
 export type InsertDocumentRequest = typeof documentRequests.$inferInsert;
 export type DocumentRequest = typeof documentRequests.$inferSelect;
+
+export type InsertNotification = typeof notifications.$inferInsert;
+export type Notification = typeof notifications.$inferSelect;
 
 // ============================================================================
 // VALIDATION SCHEMAS

@@ -1120,6 +1120,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      if (!quote) {
+        return res.status(500).json({ message: "Failed to save quote" });
+      }
+
       console.log('📤 Returning quote to supplier:', {
         id: quote.id,
         preliminaryApprovalStatus: quote.preliminaryApprovalStatus,
@@ -1289,7 +1293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               console.log(`✅ All documents complete! Status updated to 'final_submitted' and document requests marked as 'completed'`);
 
-              // Get admin/procurement emails
+              // Get admin/procurement users
               const adminUsers = await db.select()
                 .from(users)
                 .where(sql`${users.role} IN ('admin', 'procurement') AND ${users.active} = true`);
@@ -1298,6 +1302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 .filter(u => u.email)
                 .map(u => u.email as string);
 
+              // Send email notification
               if (adminEmails.length > 0 && quote.requestId) {
                 const quoteDetailUrl = `${getBaseUrl()}/quote-requests/${quote.requestId}/quotes/${quoteId}`;
 
@@ -1312,7 +1317,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   totalRequested: allRequestedDocTypes.length,
                 });
 
-                console.log(`✅ Notification sent to ${adminEmails.length} admin(s)`);
+                console.log(`✅ Email notification sent to ${adminEmails.length} admin(s)`);
+              }
+
+              // Create in-app notifications for all admin/procurement users
+              if (adminUsers.length > 0 && quote.requestId) {
+                const notificationPromises = adminUsers.map(admin => 
+                  storage.createNotification({
+                    userId: admin.id,
+                    type: 'documentation_complete',
+                    title: 'Documentation Complete',
+                    message: `${quoteSupplier.supplierName} has submitted all required documents for ${request.requestNumber}`,
+                    relatedQuoteId: quoteId,
+                    relatedRequestId: quote.requestId!,
+                  })
+                );
+                
+                await Promise.all(notificationPromises);
+                console.log(`✅ In-app notifications created for ${adminUsers.length} admin/procurement user(s)`);
               }
             } else {
               console.log(`📄 Document uploaded. ${allRequestedDocTypes.length - uploadedDocTypes.length} document(s) still pending. No notification sent.`);
@@ -1443,6 +1465,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting supplier document:", error);
       res.status(500).json({ message: "Failed to delete document" });
+    }
+  });
+
+  // ============================================================================
+  // NOTIFICATION ROUTES
+  // ============================================================================
+
+  // Get notifications for current user
+  app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const [notifications, unreadCount] = await Promise.all([
+        storage.getNotificationsByUser(userId, 10),
+        storage.getUnreadNotificationCount(userId),
+      ]);
+
+      res.json({
+        notifications,
+        unreadCount,
+      });
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  // Mark notification as read
+  app.patch('/api/notifications/:id/read', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { id } = req.params;
+      
+      // Verify notification belongs to this user before marking as read
+      const userNotifications = await storage.getNotificationsByUser(userId, 1000);
+      const notification = userNotifications.find(n => n.id === id);
+      
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found or access denied" });
+      }
+      
+      await storage.markNotificationAsRead(id);
+      res.json({ message: "Notification marked as read" });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  // Mark all notifications as read
+  app.patch('/api/notifications/read-all', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      await storage.markAllNotificationsAsRead(userId);
+      res.json({ message: "All notifications marked as read" });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({ message: "Failed to mark all notifications as read" });
     }
   });
 

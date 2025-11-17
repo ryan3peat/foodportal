@@ -36,6 +36,7 @@ interface DocumentManagerProps {
   canUpload?: boolean;
   canDelete?: boolean;
   requestedDocuments?: string[];
+  isSupplierView?: boolean; // True for supplier portal, false for admin portal
 }
 
 const DOCUMENT_LABELS: Record<string, string> = {
@@ -61,6 +62,7 @@ export default function DocumentManager({
   canUpload = false,
   canDelete = false,
   requestedDocuments = [],
+  isSupplierView = false,
 }: DocumentManagerProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState<string>("");
@@ -68,12 +70,21 @@ export default function DocumentManager({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Use supplier-specific endpoint for supplier portal, general endpoint for admin portal
+  const documentsEndpoint = isSupplierView 
+    ? `/api/supplier/quotes/${quoteId}/documents`
+    : `/api/quotes/${quoteId}/documents`;
+  const documentsQueryKey = isSupplierView
+    ? ['/api/supplier/quotes', quoteId, 'documents']
+    : ['/api/quotes', quoteId, 'documents'];
+  // Note: Upload/delete endpoints only exist for suppliers - admins can only view documents
+
   // Fetch documents (works for both admins and suppliers)
   const { data: documents = [], isLoading } = useQuery<Document[]>({
-    queryKey: ['/api/quotes', quoteId, 'documents'],
+    queryKey: documentsQueryKey,
     enabled: !!quoteId,
     queryFn: async () => {
-      const response = await fetch(`/api/quotes/${quoteId}/documents`, {
+      const response = await fetch(documentsEndpoint, {
         credentials: 'include',
       });
       if (!response.ok) {
@@ -127,7 +138,7 @@ export default function DocumentManager({
       setSelectedFile(null);
       setDocumentType("");
       // Use refetchQueries to force immediate refetch (staleTime: Infinity prevents auto-refetch on invalidate)
-      queryClient.refetchQueries({ queryKey: ['/api/quotes', quoteId, 'documents'] });
+      queryClient.refetchQueries({ queryKey: documentsQueryKey });
       queryClient.refetchQueries({ queryKey: ['/api/quotes', quoteId, 'document-requests'] });
       queryClient.refetchQueries({ queryKey: ['/api/supplier/dashboard'] });
       queryClient.refetchQueries({ queryKey: ['/api/supplier/quote-requests'] });
@@ -162,7 +173,7 @@ export default function DocumentManager({
         description: "Document has been deleted successfully.",
       });
       // Use refetchQueries to force immediate refetch (staleTime: Infinity prevents auto-refetch on invalidate)
-      queryClient.refetchQueries({ queryKey: ['/api/quotes', quoteId, 'documents'] });
+      queryClient.refetchQueries({ queryKey: documentsQueryKey });
       queryClient.refetchQueries({ queryKey: ['/api/quotes', quoteId, 'document-requests'] });
       queryClient.refetchQueries({ queryKey: ['/api/supplier/dashboard'] });
       queryClient.refetchQueries({ queryKey: ['/api/supplier/quote-requests'] });
@@ -247,7 +258,7 @@ export default function DocumentManager({
           variant: "destructive",
         });
         // Refresh document list to show updated status
-        queryClient.refetchQueries({ queryKey: ['/api/quotes', quoteId, 'documents'] });
+        queryClient.refetchQueries({ queryKey: documentsQueryKey });
         return;
       }
 

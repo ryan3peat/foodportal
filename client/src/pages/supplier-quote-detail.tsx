@@ -305,6 +305,7 @@ export default function SupplierQuoteDetail() {
                   quoteId={quote.id}
                   canUpload={quote.preliminaryApprovalStatus !== 'final_submitted'}
                   canDelete={quote.preliminaryApprovalStatus !== 'final_submitted'}
+                  isSupplierView={true}
                 />
               </>
             ) : quote.preliminaryApprovalStatus === 'initial_submitted' ? (

@@ -68,6 +68,7 @@ export interface IStorage {
   // Request supplier operations
   createRequestSupplier(requestSupplier: InsertRequestSupplier): Promise<RequestSupplier>;
   getRequestSuppliers(requestId: string): Promise<RequestSupplier[]>;
+  getRequestSupplierByRequestAndSupplier(requestId: string, supplierId: string): Promise<RequestSupplier | undefined>;
   updateRequestSupplier(id: string, data: Partial<InsertRequestSupplier>): Promise<RequestSupplier | undefined>;
   
   // Supplier quote operations
@@ -103,6 +104,7 @@ export interface IStorage {
       supplierName: string;
       email: string;
       requestSupplierId: string;
+      emailSentAt: Date | null;
       quote: SupplierQuote | null;
     }>;
   } | undefined>;
@@ -460,6 +462,19 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(requestSuppliers).where(eq(requestSuppliers.requestId, requestId));
   }
 
+  async getRequestSupplierByRequestAndSupplier(requestId: string, supplierId: string): Promise<RequestSupplier | undefined> {
+    const [requestSupplier] = await db
+      .select()
+      .from(requestSuppliers)
+      .where(
+        and(
+          eq(requestSuppliers.requestId, requestId),
+          eq(requestSuppliers.supplierId, supplierId)
+        )
+      );
+    return requestSupplier;
+  }
+
   async updateRequestSupplier(id: string, data: Partial<InsertRequestSupplier>): Promise<RequestSupplier | undefined> {
     const [updated] = await db.update(requestSuppliers).set(data).where(eq(requestSuppliers.id, id)).returning();
     return updated;
@@ -592,6 +607,7 @@ export class DatabaseStorage implements IStorage {
       supplierName: string;
       email: string;
       requestSupplierId: string;
+      emailSentAt: Date | null;
       quote: SupplierQuote | null;
     }>;
   } | undefined> {
@@ -606,6 +622,7 @@ export class DatabaseStorage implements IStorage {
         supplierId: requestSuppliers.supplierId,
         supplierName: suppliers.supplierName,
         email: suppliers.email,
+        emailSentAt: requestSuppliers.emailSentAt,
       })
       .from(requestSuppliers)
       .leftJoin(suppliers, eq(requestSuppliers.supplierId, suppliers.id))
@@ -622,6 +639,7 @@ export class DatabaseStorage implements IStorage {
         supplierName: rs.supplierName!,
         email: rs.email!,
         requestSupplierId: rs.requestSupplierId,
+        emailSentAt: rs.emailSentAt,
         quote,
       };
     });

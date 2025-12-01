@@ -887,6 +887,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Resend RFQ notification to a specific supplier (admin/procurement only)
+  app.post('/api/quote-requests/:id/resend-notification/:supplierId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const currentUser = await storage.getUser(userId);
+
+      if (currentUser?.role !== 'admin' && currentUser?.role !== 'procurement') {
+        return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });
+      }
+
+      const { id: requestId, supplierId } = req.params;
+
+      // Get the quote request
+      const quoteRequest = await storage.getQuoteRequest(requestId);
+      if (!quoteRequest) {
+        return res.status(404).json({ message: "Quote request not found" });
+      }
+
+      // Get the supplier
+      const supplier = await storage.getSupplier(supplierId);
+      if (!supplier) {
+        return res.status(404).json({ message: "Supplier not found" });
+      }
+
+      // Get the request-supplier relationship
+      const requestSupplier = await storage.getRequestSupplierByRequestAndSupplier(requestId, supplierId);
+      if (!requestSupplier) {
+        return res.status(404).json({ message: "Supplier is not associated with this quote request" });
+      }
+
+      // Check if supplier has already submitted a quote
+      const existingQuotes = await storage.getSupplierQuotes(requestId);
+      const hasSubmittedQuote = existingQuotes.some(q => q.supplierId === supplierId);
+      if (hasSubmittedQuote) {
+        return res.status(400).json({ message: "Supplier has already submitted a quote for this request" });
+      }
+
+      // Use the existing access token or generate a new one
+      let accessToken = requestSupplier.accessToken;
+      if (!accessToken) {
+        accessToken = generateAccessToken();
+        const tokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+        await storage.updateRequestSupplier(requestSupplier.id, {
+          accessToken,
+          tokenExpiresAt,
+        });
+      }
+
+      // Send RFQ notification email
+      const quoteSubmissionUrl = generateQuoteSubmissionUrl(quoteRequest.id, accessToken);
+      
+      const emailResult = await emailService.sendRFQNotification(
+        {
+          email: supplier.email,
+          name: supplier.supplierName,
+          supplierId: supplier.id,
+        },
+        {
+          requestNumber: quoteRequest.requestNumber,
+          materialName: quoteRequest.materialName,
+          casNumber: quoteRequest.casNumber || undefined,
+          femaNumber: quoteRequest.femaNumber || undefined,
+          quantityNeeded: quoteRequest.quantityNeeded,
+          unitOfMeasure: quoteRequest.unitOfMeasure,
+          submitByDate: quoteRequest.submitByDate,
+          additionalSpecifications: quoteRequest.additionalSpecifications || undefined,
+          accessToken,
+          quoteSubmissionUrl,
+        }
+      );
+
+      if (emailResult.success) {
+        // Update email sent timestamp
+        await storage.updateRequestSupplier(requestSupplier.id, {
+          emailSentAt: new Date(),
+        });
+
+        res.json({ 
+          success: true, 
+          message: "Quote request reminder sent successfully",
+          emailSentAt: new Date().toISOString()
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "Failed to send email notification",
+          error: emailResult.error 
+        });
+      }
+    } catch (error) {
+      console.error("Error resending RFQ notification:", error);
+      res.status(500).json({ message: "Failed to resend notification" });
+    }
+  });
+
   // Admin dashboard statistics
   app.get('/api/admin/dashboard', isAuthenticated, async (req: any, res) => {
     try {

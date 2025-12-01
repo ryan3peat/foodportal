@@ -15,8 +15,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, CheckCircle, Calendar, DollarSign, TrendingDown, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle, Calendar, DollarSign, TrendingDown, Trash2, Clock, Mail, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
+import { apiRequest } from "@/lib/queryClient";
 
 interface QuoteRequestDetails {
   request: {
@@ -37,6 +38,7 @@ interface QuoteRequestDetails {
     supplierName: string;
     email: string;
     requestSupplierId: string;
+    emailSentAt: string | null;
     quote: {
       id: string;
       pricePerUnit: string;
@@ -62,6 +64,7 @@ export default function QuoteRequestDetail() {
   const [, setLocation] = useLocation();
   const requestId = params?.id;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [resendingSupplierId, setResendingSupplierId] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -98,6 +101,33 @@ export default function QuoteRequestDetail() {
         description: error.message,
         variant: "destructive",
       });
+    },
+  });
+
+  const resendNotificationMutation = useMutation({
+    mutationFn: async (supplierId: string) => {
+      setResendingSupplierId(supplierId);
+      const response = await apiRequest(
+        'POST',
+        `/api/quote-requests/${requestId}/resend-notification/${supplierId}`
+      );
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Reminder Sent",
+        description: "Quote request reminder has been sent to the supplier.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/quote-requests', requestId] });
+      setResendingSupplierId(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Send Reminder",
+        description: error.message,
+        variant: "destructive",
+      });
+      setResendingSupplierId(null);
     },
   });
 
@@ -146,8 +176,9 @@ export default function QuoteRequestDetail() {
 
   const sortedQuotes = suppliers
     .filter(s => s.quote !== null)
-    .sort((a, b) => parseFloat(a.quote!.pricePerUnit) - parseFloat(b.quote!.pricePerUnit))
-    .slice(0, 3);
+    .sort((a, b) => parseFloat(a.quote!.pricePerUnit) - parseFloat(b.quote!.pricePerUnit));
+
+  const pendingSuppliers = suppliers.filter(s => s.quote === null);
 
   return (
     <div className="p-6 space-y-6">
@@ -239,11 +270,11 @@ export default function QuoteRequestDetail() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <div>
               <CardTitle>Supplier Quotes Comparison</CardTitle>
               <CardDescription>
-                Top {sortedQuotes.length} quote{sortedQuotes.length !== 1 ? 's' : ''} ordered by best price
+                {quotesReceived} quote{quotesReceived !== 1 ? 's' : ''} received, {pendingSuppliers.length} pending
               </CardDescription>
             </div>
             {sortedQuotes.length > 0 && (
@@ -254,81 +285,171 @@ export default function QuoteRequestDetail() {
             )}
           </div>
         </CardHeader>
-        <CardContent>
-          {sortedQuotes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <CheckCircle className="h-12 w-12 text-muted-foreground/50 mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No Quotes Yet</h3>
-              <p className="text-sm text-muted-foreground max-w-md">
-                Waiting for suppliers to submit their quotes. You'll see the top 3 quotes here once received.
-              </p>
+        <CardContent className="space-y-6">
+          {sortedQuotes.length > 0 && (
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                Quotes Received ({sortedQuotes.length})
+              </h4>
+              <div className="grid gap-4 md:grid-cols-3">
+                {sortedQuotes.slice(0, 3).map((supplier, index) => (
+                  <Card 
+                    key={supplier.id}
+                    className={index === 0 ? "border-primary/50 bg-primary/5" : ""}
+                    data-testid={`card-supplier-${index + 1}`}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between gap-1">
+                        <CardTitle className="text-base">
+                          #{index + 1}
+                        </CardTitle>
+                        {index === 0 && (
+                          <Badge 
+                            variant="outline" 
+                            className="bg-primary/10 text-primary border-primary/20 text-xs"
+                            data-testid="badge-best-price"
+                          >
+                            Best Price
+                          </Badge>
+                        )}
+                      </div>
+                      <CardDescription className="font-medium text-foreground">
+                        {supplier.supplierName}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Price per Unit</p>
+                        <p className="text-2xl font-bold text-foreground" data-testid={`text-price-${index + 1}`}>
+                          {supplier.quote!.currency} {parseFloat(supplier.quote!.pricePerUnit).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Date Requested</p>
+                          <p className="text-sm font-medium text-foreground flex items-center gap-1" data-testid={`text-date-requested-${index + 1}`}>
+                            <Mail className="h-3 w-3" />
+                            {supplier.emailSentAt 
+                              ? format(new Date(supplier.emailSentAt), "MMM d, yyyy")
+                              : "—"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">MOQ</p>
+                          <p className="text-sm font-medium text-foreground" data-testid={`text-moq-${index + 1}`}>
+                            {supplier.quote!.moq || "—"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Lead Time</p>
+                          <p className="text-sm font-medium text-foreground" data-testid={`text-lead-time-${index + 1}`}>
+                            {supplier.quote!.leadTime}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Payment Terms</p>
+                          <p className="text-sm font-medium text-foreground" data-testid={`text-payment-terms-${index + 1}`}>
+                            {supplier.quote!.paymentTerms || "—"}
+                          </p>
+                        </div>
+                      </div>
+                      <Link href={`/quote-requests/${request.id}/quotes/${supplier.quote!.id}`}>
+                        <Button
+                          variant={index === 0 ? "default" : "outline"}
+                          className="w-full"
+                          data-testid={`button-select-${index + 1}`}
+                        >
+                          Select Quote
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-3">
-              {sortedQuotes.map((supplier, index) => (
-                <Card 
-                  key={supplier.id}
-                  className={index === 0 ? "border-primary/50 bg-primary/5" : ""}
-                  data-testid={`card-supplier-${index + 1}`}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between gap-1">
-                      <CardTitle className="text-base">
-                        Supplier #{index + 1}
-                      </CardTitle>
-                      {index === 0 && (
+          )}
+
+          {pendingSuppliers.length > 0 && (
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Clock className="h-4 w-4 text-amber-500" />
+                Awaiting Quote ({pendingSuppliers.length})
+              </h4>
+              <div className="grid gap-4 md:grid-cols-3">
+                {pendingSuppliers.map((supplier) => (
+                  <Card 
+                    key={supplier.id}
+                    className="border-dashed"
+                    data-testid={`card-pending-supplier-${supplier.id}`}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between gap-1">
+                        <CardTitle className="text-base text-muted-foreground">
+                          Pending
+                        </CardTitle>
                         <Badge 
                           variant="outline" 
-                          className="bg-primary/10 text-primary border-primary/20 text-xs"
-                          data-testid="badge-best-price"
+                          className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs"
                         >
-                          Best Price
+                          Awaiting Quote
                         </Badge>
-                      )}
-                    </div>
-                    <CardDescription className="font-medium text-foreground">
-                      {supplier.supplierName}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Price per Unit</p>
-                      <p className="text-2xl font-bold text-foreground" data-testid={`text-price-${index + 1}`}>
-                        {supplier.quote!.currency} {parseFloat(supplier.quote!.pricePerUnit).toFixed(2)}
-                      </p>
-                    </div>
-                    <div className="space-y-3">
+                      </div>
+                      <CardDescription className="font-medium text-foreground">
+                        {supplier.supplierName}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
                       <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-1">MOQ</p>
-                        <p className="text-sm font-medium text-foreground" data-testid={`text-moq-${index + 1}`}>
-                          {supplier.quote!.moq || "—"}
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Date Requested</p>
+                        <p className="text-sm font-medium text-foreground flex items-center gap-1" data-testid={`text-date-requested-pending-${supplier.id}`}>
+                          <Mail className="h-3 w-3" />
+                          {supplier.emailSentAt 
+                            ? format(new Date(supplier.emailSentAt), "MMM d, yyyy")
+                            : "Not sent"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-1">Lead Time</p>
-                        <p className="text-sm font-medium text-foreground" data-testid={`text-lead-time-${index + 1}`}>
-                          {supplier.quote!.leadTime}
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Email</p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {supplier.email}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-1">Payment Terms</p>
-                        <p className="text-sm font-medium text-foreground" data-testid={`text-payment-terms-${index + 1}`}>
-                          {supplier.quote!.paymentTerms || "—"}
-                        </p>
+                      <div className="pt-2">
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => resendNotificationMutation.mutate(supplier.id)}
+                          disabled={resendingSupplierId === supplier.id}
+                          data-testid={`button-resend-${supplier.id}`}
+                        >
+                          {resendingSupplierId === supplier.id ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Request Quotation Again
+                            </>
+                          )}
+                        </Button>
                       </div>
-                    </div>
-                    <Link href={`/quote-requests/${request.id}/quotes/${supplier.quote!.id}`}>
-                      <Button
-                        variant={index === 0 ? "default" : "outline"}
-                        className="w-full"
-                        data-testid={`button-select-${index + 1}`}
-                      >
-                        Select Quote
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {suppliers.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <CheckCircle className="h-12 w-12 text-muted-foreground/50 mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No Suppliers Invited</h3>
+              <p className="text-sm text-muted-foreground max-w-md">
+                No suppliers have been invited to this quote request yet.
+              </p>
             </div>
           )}
         </CardContent>

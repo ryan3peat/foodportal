@@ -134,6 +134,12 @@ export function AdminLoginForm() {
     forgotPasswordForm.reset();
   };
 
+  const handleShowForgotPassword = () => {
+    setErrorMessage(null);
+    forgotPasswordForm.reset();
+    setShowForgotPassword(true);
+  };
+
   if (showForgotPassword) {
     return (
       <div className="w-full">
@@ -165,7 +171,7 @@ export function AdminLoginForm() {
               </Alert>
             )}
 
-            <Form {...forgotPasswordForm}>
+            <Form {...forgotPasswordForm} key="forgot-password-form">
               <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">
                 <p className="text-sm text-muted-foreground mb-4">
                   Enter your email address and we'll send you a link to reset your password.
@@ -179,6 +185,7 @@ export function AdminLoginForm() {
                       <FormControl>
                         <Input
                           {...field}
+                          value={field.value || ""}
                           type="email"
                           placeholder="admin@essentialflavours.com"
                           data-testid="input-forgot-email"
@@ -258,7 +265,7 @@ export function AdminLoginForm() {
                   <button
                     type="button"
                     className="text-sm text-primary hover:underline"
-                    onClick={() => setShowForgotPassword(true)}
+                    onClick={handleShowForgotPassword}
                     data-testid="link-forgot-password"
                   >
                     Forgot password?

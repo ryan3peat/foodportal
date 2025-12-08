@@ -1,8 +1,9 @@
 import { defineConfig } from "drizzle-kit";
-import { config } from "dotenv";
+import { config as loadEnv } from "dotenv";
 
-// Load environment variables from .env file
-config();
+// Prefer .env.local (developer overrides), fallback to .env
+loadEnv({ path: ".env.local" });
+loadEnv();
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL, ensure the database is provisioned");

@@ -17,7 +17,7 @@ export function getSession() {
   const sessionSecret = process.env.SESSION_SECRET || 'demo-session-secret-change-in-production';
   
   if (!process.env.SESSION_SECRET) {
-    console.warn('⚠️  SESSION_SECRET not set. Using default for demo mode. Set SESSION_SECRET in .env for production.');
+    console.warn('⚠️  SESSION_SECRET not set. Using default for demo mode. Set SESSION_SECRET in .env.local for production.');
   }
   
   return session({

@@ -4,6 +4,9 @@ import { FileText, Users, Clock, TrendingUp, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { QuoteRequest } from "@shared/schema";
+import { motion } from "framer-motion";
+import { AnimatedCounter } from "@/components/AnimatedCounter";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardStats {
   activeRequests: number;
@@ -47,111 +50,100 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Link href="/quote-requests">
-            <Card className="hover-elevate cursor-pointer transition-all">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  Active Requests
-                </CardTitle>
-                <div className="h-8 w-8 rounded-full bg-chart-1/10 flex items-center justify-center">
-                  <FileText className="h-4 w-4 text-chart-1" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                {statsLoading ? (
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" data-testid="loader-active-requests" />
-                ) : (
-                  <>
-                    <div className="text-3xl font-bold text-foreground" data-testid="text-active-requests">
-                      {stats?.activeRequests ?? 0}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {stats?.activeRequests === 0 ? 'No active quote requests' : 'Click to view all requests'}
-                    </p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </Link>
+          {[
+            {
+              href: "/quote-requests",
+              title: "Active Requests",
+              icon: FileText,
+              iconColor: "chart-1",
+              value: stats?.activeRequests ?? 0,
+              loading: statsLoading,
+              testId: "active-requests",
+              description: (val: number) => val === 0 ? 'No active quote requests' : 'Click to view all requests',
+            },
+            {
+              href: "/suppliers",
+              title: "Total Suppliers",
+              icon: Users,
+              iconColor: "chart-2",
+              value: stats?.totalSuppliers ?? 0,
+              loading: statsLoading,
+              testId: "total-suppliers",
+              description: (val: number) => val === 0 ? 'Ready to add suppliers' : 'Click to manage suppliers',
+            },
+            {
+              href: "/quote-requests?filter=pending-docs",
+              title: "Pending Docs",
+              icon: Clock,
+              iconColor: "chart-3",
+              value: stats?.pendingQuotes ?? 0,
+              loading: statsLoading,
+              testId: "pending-docs",
+              description: (val: number) => val === 0 ? 'No pending documentation' : 'Click to view requests',
+            },
+            {
+              href: null,
+              title: "Avg Response Time",
+              icon: TrendingUp,
+              iconColor: "chart-4",
+              value: formatResponseTime(stats?.averageResponseTimeHours ?? null),
+              loading: statsLoading,
+              testId: "avg-response-time",
+              description: () => stats?.averageResponseTimeHours != null ? 'Average supplier response' : 'No data yet',
+              isString: true,
+            },
+          ].map((stat, index) => {
+            const CardWrapper = stat.href ? Link : motion.div;
+            const cardProps = stat.href ? { href: stat.href } : {};
+            const Icon = stat.icon;
 
-          <Link href="/suppliers">
-            <Card className="hover-elevate cursor-pointer transition-all">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  Total Suppliers
-                </CardTitle>
-                <div className="h-8 w-8 rounded-full bg-chart-2/10 flex items-center justify-center">
-                  <Users className="h-4 w-4 text-chart-2" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                {statsLoading ? (
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" data-testid="loader-total-suppliers" />
-                ) : (
-                  <>
-                    <div className="text-3xl font-bold text-foreground" data-testid="text-total-suppliers">
-                      {stats?.totalSuppliers ?? 0}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {stats?.totalSuppliers === 0 ? 'Ready to add suppliers' : 'Click to manage suppliers'}
-                    </p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/quote-requests?filter=pending-docs">
-            <Card className="hover-elevate cursor-pointer transition-all" data-testid="card-stat-pending-docs">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  Pending Docs
-                </CardTitle>
-                <div className="h-8 w-8 rounded-full bg-chart-3/10 flex items-center justify-center">
-                  <Clock className="h-4 w-4 text-chart-3" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                {statsLoading ? (
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" data-testid="loader-pending-quotes" />
-                ) : (
-                  <>
-                    <div className="text-3xl font-bold text-foreground" data-testid="text-pending-quotes">
-                      {stats?.pendingQuotes ?? 0}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {stats?.pendingQuotes === 0 ? 'No pending documentation' : 'Click to view requests'}
-                    </p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Avg Response Time
-              </CardTitle>
-              <div className="h-8 w-8 rounded-full bg-chart-4/10 flex items-center justify-center">
-                <TrendingUp className="h-4 w-4 text-chart-4" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {statsLoading ? (
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" data-testid="loader-avg-response-time" />
-              ) : (
-                <>
-                  <div className="text-3xl font-bold text-foreground" data-testid="text-avg-response-time">
-                    {formatResponseTime(stats?.averageResponseTimeHours ?? null)}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {stats?.averageResponseTimeHours != null ? 'Average supplier response' : 'No data yet'}
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
+            return (
+              <motion.div
+                key={stat.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+              >
+                <CardWrapper {...cardProps}>
+                  <Card className="glass-card hover-elevate cursor-pointer transition-all border-border/50">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                        {stat.title}
+                      </CardTitle>
+                      <motion.div
+                        className={`h-8 w-8 rounded-full bg-${stat.iconColor}/10 flex items-center justify-center`}
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        transition={{ type: "spring", stiffness: 400 }}
+                      >
+                        <Icon className={`h-4 w-4 text-${stat.iconColor}`} />
+                      </motion.div>
+                    </CardHeader>
+                    <CardContent>
+                      {stat.loading ? (
+                        <div className="space-y-2">
+                          <Skeleton className="h-9 w-20" />
+                          <Skeleton className="h-4 w-32" />
+                        </div>
+                      ) : (
+                        <>
+                          <div className="text-3xl font-bold text-foreground" data-testid={`text-${stat.testId}`}>
+                            {stat.isString ? (
+                              stat.value
+                            ) : (
+                              <AnimatedCounter value={stat.value as number} />
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {stat.description(stat.value as number)}
+                          </p>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                </CardWrapper>
+              </motion.div>
+            );
+          })}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

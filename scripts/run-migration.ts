@@ -1,3 +1,8 @@
+import { config as loadEnv } from "dotenv";
+// Prefer .env.local (developer overrides), fallback to .env
+loadEnv({ path: ".env.local" });
+loadEnv();
+
 import { db } from '../server/db';
 import { sql } from 'drizzle-orm';
 import fs from 'fs';

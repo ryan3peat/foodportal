@@ -19,8 +19,15 @@ class NotificationService {
       path: '/ws/notifications'
     });
 
+    // Track failed auth attempts to reduce log spam
+    let failedAuthAttempts = 0;
+    const MAX_LOG_FAILURES = 3;
+
     this.wss.on('connection', (ws, req) => {
-      console.log('📡 New WebSocket connection attempt');
+      // Only log occasionally to reduce spam when DB is down
+      if (this.clients.size === 0 && failedAuthAttempts < MAX_LOG_FAILURES) {
+        console.log('📡 New WebSocket connection attempt');
+      }
       
       ws.on('message', async (data) => {
         try {
@@ -33,27 +40,46 @@ class NotificationService {
               return;
             }
 
-            const user = await storage.getUser(userId);
-            if (!user) {
-              ws.close(1008, 'Invalid user');
-              return;
+            try {
+              const user = await storage.getUser(userId);
+              if (!user) {
+                failedAuthAttempts++;
+                if (failedAuthAttempts <= MAX_LOG_FAILURES) {
+                  console.log(`📡 WebSocket auth failed: user not found (attempt ${failedAuthAttempts})`);
+                }
+                ws.close(1008, 'Invalid user');
+                return;
+              }
+
+              // Reset failure counter on success
+              failedAuthAttempts = 0;
+
+              const clientId = `${userId}-${Date.now()}`;
+              this.clients.set(clientId, {
+                ws,
+                userId,
+                role: user.role as 'admin' | 'procurement' | 'supplier'
+              });
+
+              console.log(`✅ WebSocket authenticated for user: ${userId} (${user.role})`);
+
+              ws.send(JSON.stringify({ type: 'auth_success', clientId }));
+
+              ws.on('close', () => {
+                this.clients.delete(clientId);
+                console.log(`📡 WebSocket disconnected: ${userId}`);
+              });
+            } catch (dbError) {
+              failedAuthAttempts++;
+              if (failedAuthAttempts <= MAX_LOG_FAILURES) {
+                console.error(`📡 WebSocket auth failed due to database error (attempt ${failedAuthAttempts}):`, 
+                  dbError instanceof Error ? dbError.message : dbError);
+                if (failedAuthAttempts === MAX_LOG_FAILURES) {
+                  console.log('📡 Suppressing further WebSocket auth failure logs...');
+                }
+              }
+              ws.close(1011, 'Database unavailable');
             }
-
-            const clientId = `${userId}-${Date.now()}`;
-            this.clients.set(clientId, {
-              ws,
-              userId,
-              role: user.role as 'admin' | 'procurement' | 'supplier'
-            });
-
-            console.log(`✅ WebSocket authenticated for user: ${userId} (${user.role})`);
-
-            ws.send(JSON.stringify({ type: 'auth_success', clientId }));
-
-            ws.on('close', () => {
-              this.clients.delete(clientId);
-              console.log(`📡 WebSocket disconnected: ${userId}`);
-            });
           }
         } catch (error) {
           console.error('WebSocket message error:', error);
@@ -61,7 +87,10 @@ class NotificationService {
       });
 
       ws.on('error', (error) => {
-        console.error('WebSocket error:', error);
+        // Only log if not a common disconnect error
+        if (error.message && !error.message.includes('ECONNRESET')) {
+          console.error('WebSocket error:', error);
+        }
       });
     });
 

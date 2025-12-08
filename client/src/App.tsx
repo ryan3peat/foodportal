@@ -9,7 +9,6 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
-import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -27,6 +26,12 @@ import SetPassword from "@/pages/set-password";
 import ApproveSupplier from "@/pages/approve-supplier";
 import SupplierApplications from "@/pages/supplier-applications";
 import SupplierApplicationDetail from "@/pages/supplier-application-detail";
+import { RoleToggle } from "@/components/role-toggle";
+import { LeadCaptureModal } from "@/components/LeadCaptureModal";
+import { useSessionTimer } from "@/hooks/useSessionTimer";
+import { useState, useEffect } from "react";
+import { PageTransition } from "@/components/PageTransition";
+import { AnimatePresence } from "framer-motion";
 
 function PublicRouter() {
   return (
@@ -49,15 +54,40 @@ function SupplierQuoteRequestsGuard() {
       variant: "destructive",
     });
     navigate('/supplier/dashboard');
-  }, [navigate, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   return null;
 }
 
 function AuthenticatedRouter() {
   const { user } = useAuth();
+  const [location, setLocation] = useLocation();
   const isAdmin = user?.role === 'admin' || user?.role === 'procurement';
   const isSupplier = user?.role === 'supplier';
+
+  // Redirect to appropriate dashboard when role changes and user is on an invalid route
+  useEffect(() => {
+    const adminOnlyRoutes = [
+      '/suppliers',
+      '/quote-requests',
+      '/approve-supplier',
+      '/supplier-applications',
+      '/users',
+    ];
+
+    if (isSupplier) {
+      // If supplier is on root or any admin-only route, redirect to supplier dashboard
+      if (location === '/' || adminOnlyRoutes.some(route => location.startsWith(route))) {
+        setLocation('/supplier/dashboard');
+      }
+    } else if (isAdmin) {
+      // If admin/procurement is on any supplier-specific route, redirect to admin dashboard
+      if (location.startsWith('/supplier/')) {
+        setLocation('/');
+      }
+    }
+  }, [user?.role, location, isAdmin, isSupplier, setLocation]);
 
   return (
     <Switch>
@@ -96,6 +126,12 @@ function Router() {
 
 function AppContent() {
   const { isAuthenticated, user } = useAuth();
+  const { shouldShowPopup, dismissPopup, markSubmitted } = useSessionTimer(30, 2);
+  const [leadOpen, setLeadOpen] = useState(false);
+
+  useEffect(() => {
+    setLeadOpen(shouldShowPopup);
+  }, [shouldShowPopup]);
 
   const style = {
     "--sidebar-width": "20rem",
@@ -114,6 +150,7 @@ function AppContent() {
             <header className="flex items-center justify-between p-4 border-b border-border">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
               <div className="flex items-center gap-2">
+                <RoleToggle />
                 {isAdmin && <NotificationBell />}
               </div>
             </header>
@@ -122,6 +159,17 @@ function AppContent() {
             </main>
           </div>
         </div>
+        <LeadCaptureModal
+          isOpen={leadOpen}
+          onClose={() => {
+            setLeadOpen(false);
+            dismissPopup();
+          }}
+          onSubmitted={() => {
+            markSubmitted();
+            setLeadOpen(false);
+          }}
+        />
       </SidebarProvider>
     );
   }

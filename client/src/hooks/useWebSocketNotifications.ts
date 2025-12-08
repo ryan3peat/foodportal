@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { queryClient } from '@/lib/queryClient';
 import { useNotificationSound } from './useNotificationSound';
+import { DEMO_MODE } from '@/lib/demoApiClient';
 
 interface NotificationMessage {
   type: 'new_notification' | 'auth_success';
@@ -19,6 +20,8 @@ interface NotificationMessage {
 }
 
 export function useWebSocketNotifications(userId: string | undefined, enabled: boolean = true) {
+  // In demo mode, WebSocket is not needed - notifications work via polling/query invalidation
+  // Always call hooks in the same order (Rules of Hooks)
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
@@ -26,7 +29,8 @@ export function useWebSocketNotifications(userId: string | undefined, enabled: b
   const { playNotificationSound } = useNotificationSound();
 
   const connect = useCallback(() => {
-    if (!userId || !enabled) return;
+    // Double-check: never connect in demo mode
+    if (DEMO_MODE || !userId || !enabled) return;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws/notifications`;
@@ -68,6 +72,12 @@ export function useWebSocketNotifications(userId: string | undefined, enabled: b
         setIsConnected(false);
         wsRef.current = null;
 
+        // Don't reconnect if auth explicitly failed (1008) or database unavailable (1011)
+        if (event.code === 1008 || event.code === 1011) {
+          console.log('🔔 Not reconnecting - authentication or database issue');
+          return;
+        }
+
         if (enabled && reconnectAttemptsRef.current < 5) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
           reconnectAttemptsRef.current++;
@@ -100,12 +110,23 @@ export function useWebSocketNotifications(userId: string | undefined, enabled: b
   }, []);
 
   useEffect(() => {
+    // Skip WebSocket entirely in demo mode
+    if (DEMO_MODE) {
+      // Notifications work via polling/query invalidation in demo mode
+      return;
+    }
+    
+    if (!userId || !enabled) {
+      return;
+    }
+    
     connect();
     
     return () => {
       disconnect();
     };
-  }, [connect, disconnect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, enabled]); // Only depend on userId and enabled, not connect/disconnect
 
   return { isConnected };
 }

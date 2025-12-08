@@ -1,10 +1,13 @@
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+// Prefer .env.local (developer overrides), fallback to .env
+loadEnv({ path: ".env.local" });
+loadEnv();
 import postgres from 'postgres';
 
 const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
-  console.error('❌ DATABASE_URL is not set in .env file');
+  console.error('❌ DATABASE_URL is not set in .env.local file');
   process.exit(1);
 }
 

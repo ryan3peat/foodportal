@@ -7,7 +7,7 @@ import { sql } from "drizzle-orm";
 import { setupAuth, isAuthenticated } from "./auth";
 import localPassport from "./auth/localAuth";
 import { hashPassword, validatePasswordComplexity } from "./auth/localAuth";
-import { insertUserSchema, insertSupplierSchema, insertSupplierQuoteSchema, insertDocumentRequestSchema, insertSupplierApplicationSchema } from "@shared/schema";
+import { insertUserSchema, insertSupplierSchema, insertSupplierQuoteSchema, insertDocumentRequestSchema, insertSupplierApplicationSchema, insertDemoLeadSchema, demoLeads } from "@shared/schema";
 import { generateAccessToken, generateQuoteSubmissionUrl } from "./email/emailService";
 import { emailService } from "./email/hybridEmailService";
 import { validateQuoteAccessToken } from "./middleware/tokenAuth";
@@ -1766,6 +1766,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error converting application to supplier:", error);
       res.status(500).json({ message: "Failed to convert application to supplier" });
+    }
+  });
+
+  // ============================================================================
+  // LEAD CAPTURE
+  // ============================================================================
+  app.post('/api/leads', async (req: any, res) => {
+    try {
+      const validation = insertDemoLeadSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          message: "Invalid lead data",
+          errors: validation.error.errors,
+        });
+      }
+
+      const [lead] = await db.insert(demoLeads).values({
+        ...validation.data,
+        sessionId: req.body.sessionId || 'unknown-session',
+      }).returning();
+
+      res.json({ success: true, lead });
+    } catch (error) {
+      console.error("Error capturing lead:", error);
+      // In demo mode, don't fail the user even if DB is unavailable
+      res.status(200).json({ success: true, message: "Lead captured (demo mode fallback)" });
     }
   });
 

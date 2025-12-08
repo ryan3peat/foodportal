@@ -1,30 +1,44 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import type { User } from "@shared/schema";
+import { buildUserForRole, getDemoSession, setDemoRole, type DemoRole } from "@/lib/demoSession";
 
-// Demo mode: Return mock admin user
-const MOCK_ADMIN_USER: User = {
-  id: "demo-admin-user",
-  email: "admin@demo.com",
-  firstName: "Demo",
-  lastName: "Admin",
-  role: "admin",
-  active: true,
-  companyName: null,
-  profileImageUrl: null,
-  passwordHash: null,
-  passwordSetAt: null,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-};
+function subscribeToSessionChanges(callback: () => void) {
+  // Only listen to custom demo-session-updated event, not all storage events
+  // to avoid unnecessary re-renders from other localStorage operations
+  window.addEventListener("demo-session-updated", callback);
+  return () => {
+    window.removeEventListener("demo-session-updated", callback);
+  };
+}
 
 export function useAuth() {
-  // In demo mode, always return mock admin user
+  const [user, setUser] = useState<User>(() => buildUserForRole(getDemoSession().role));
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      const session = getDemoSession();
+      const newUser = buildUserForRole(session.role);
+      // Only update if role actually changed to prevent unnecessary re-renders
+      setUser((prevUser) => {
+        if (prevUser.role !== newUser.role || prevUser.id !== newUser.id) {
+          return newUser;
+        }
+        return prevUser;
+      });
+    };
+    return subscribeToSessionChanges(handleUpdate);
+  }, []);
+
+  const sessionRole = user.role as DemoRole;
+
   return {
-    user: MOCK_ADMIN_USER,
+    user,
+    role: sessionRole,
     isLoading: false,
     isAuthenticated: true,
     accessDenied: false,
     notRegisteredSupplier: false,
     errorMessage: undefined,
+    switchRole: setDemoRole,
   };
 }

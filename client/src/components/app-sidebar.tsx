@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { motion } from "framer-motion";
 
 const adminMenuItems = [
   {
@@ -104,11 +105,11 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar>
+    <Sidebar className="glass-card bg-sidebar/80 backdrop-blur-xl border-r border-border/70 shadow-xl animate-in slide-in-from-left duration-300">
       <SidebarContent>
-        <div className="p-6 border-b border-border">
+        <div className="p-6 border-b border-border/70">
           <div className="flex items-center gap-2">
-            <div className="h-10 w-10 rounded bg-primary flex items-center justify-center">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-ring flex items-center justify-center shadow-md">
               <span className="text-primary-foreground font-semibold text-sm">SP</span>
             </div>
             <div>
@@ -122,18 +123,29 @@ export function AppSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild data-active={location === item.url}>
-                    <Link 
-                      href={item.url}
-                      data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
+              {menuItems.map((item, index) => (
+                <motion.div
+                  key={item.title}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.2, delay: index * 0.05 }}
+                >
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      data-active={location === item.url}
+                      className="rounded-lg transition-all duration-200 data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:border data-[active=true]:border-primary/40 hover:translate-x-1 hover:bg-accent/50"
                     >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                      <Link 
+                        href={item.url}
+                        data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </motion.div>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>

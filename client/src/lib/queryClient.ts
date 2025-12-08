@@ -1,4 +1,14 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { DEMO_MODE, demoFetch } from "./demoApiClient";
+
+const runtimeFetch: typeof fetch = DEMO_MODE ? (demoFetch as any) : fetch;
+
+// In demo mode, route all fetch calls through the demo client so even
+// components that call fetch directly stay in the same in-browser session.
+if (DEMO_MODE && typeof window !== "undefined") {
+  (window as any).__originalFetch = window.fetch;
+  window.fetch = demoFetch as any;
+}
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -12,7 +22,7 @@ export async function apiRequest(
   method: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  const res = await runtimeFetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -29,7 +39,7 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    const res = await runtimeFetch(queryKey.join("/") as string, {
       credentials: "include",
     });
 

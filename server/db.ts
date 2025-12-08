@@ -1,3 +1,8 @@
+import { config as loadEnv } from "dotenv";
+// Ensure env vars load before any connection checks
+loadEnv({ path: ".env.local" });
+loadEnv();
+
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from "@shared/schema";
@@ -8,7 +13,7 @@ if (!process.env.DATABASE_URL) {
     "For demo purposes, you can:\n" +
     "1. Set up a free Supabase database at https://supabase.com\n" +
     "2. Use a local PostgreSQL database\n" +
-    "3. Create a .env file with: DATABASE_URL=postgresql://user:password@localhost:5432/dbname"
+    "3. Create a .env.local file with: DATABASE_URL=postgresql://user:password@localhost:5432/dbname"
   );
 }
 
@@ -48,7 +53,7 @@ client`SELECT 1`.catch((err) => {
   console.error('   2. Navigate to Project Settings > Database');
   console.error('   3. Find "Connection string" and select "URI" format');
   console.error('   4. Copy the connection string (it includes the password)');
-  console.error('   5. Add to your .env file:');
+  console.error('   5. Add to your .env.local file:');
   console.error('      DATABASE_URL=postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres');
   console.error('      OR use direct connection:');
   console.error('      DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres');

@@ -11,6 +11,8 @@ import {
   numeric,
   pgEnum,
   uuid,
+  serial,
+  integer,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -246,6 +248,26 @@ export const notifications = pgTable("notifications", {
   index("idx_notifications_created_at").on(table.createdAt),
 ]);
 
+// Demo leads table (lead capture)
+export const demoLeads = pgTable("demo_leads", {
+  id: serial("id").primaryKey(),
+  sessionId: varchar("session_id", { length: 255 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  companyName: varchar("company_name", { length: 255 }).notNull(),
+  companyDomain: varchar("company_domain", { length: 255 }),
+  source: varchar("source", { length: 50 }).default("demo_popup"),
+  createdAt: timestamp("created_at").defaultNow(),
+  utmSource: varchar("utm_source", { length: 100 }),
+  utmMedium: varchar("utm_medium", { length: 100 }),
+  utmCampaign: varchar("utm_campaign", { length: 100 }),
+  pageViews: integer("page_views"),
+  actionsTaken: jsonb("actions_taken"),
+}, (table) => [
+  index("idx_demo_leads_email").on(table.email),
+  index("idx_demo_leads_created_at").on(table.createdAt),
+]);
+
 // Supplier applications table (for onboarding new suppliers)
 export const supplierApplications = pgTable("supplier_applications", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -430,6 +452,8 @@ export type Notification = typeof notifications.$inferSelect;
 
 export type InsertSupplierApplication = typeof supplierApplications.$inferInsert;
 export type SupplierApplication = typeof supplierApplications.$inferSelect;
+export type InsertDemoLead = typeof demoLeads.$inferInsert;
+export type DemoLead = typeof demoLeads.$inferSelect;
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -561,4 +585,20 @@ export const insertSupplierApplicationSchema = createInsertSchema(supplierApplic
   reviewNotes: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertDemoLeadSchema = createInsertSchema(demoLeads, {
+  name: z.string().min(2, "Name required"),
+  email: z.string().email("Valid email required"),
+  companyName: z.string().min(2, "Company name required"),
+  companyDomain: z.string().url("Valid domain required").optional(),
+  source: z.string().optional(),
+  utmSource: z.string().optional(),
+  utmMedium: z.string().optional(),
+  utmCampaign: z.string().optional(),
+  pageViews: z.number().int().optional(),
+  actionsTaken: z.any().optional(),
+}).omit({
+  id: true,
+  createdAt: true,
 });

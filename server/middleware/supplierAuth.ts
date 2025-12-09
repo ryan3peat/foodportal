@@ -32,33 +32,24 @@ export async function requireSupplierAccess(req: any, res: Response, next: NextF
     // Demo mode: Bypass authentication checks
     const userId = "demo-admin-user"; // Use demo user ID
     
-    // In demo mode, get the first supplier from database, or create a mock one
-    const allSuppliers = await storage.getSuppliers();
-    let supplier;
-    
-    if (allSuppliers.length > 0) {
-      // Use the first supplier in demo mode
-      supplier = allSuppliers[0];
-    } else {
-      // Create a mock supplier if none exist (for demo purposes)
-      supplier = {
-        id: "demo-supplier-id",
-        supplierName: "Demo Metal Fabrication Supplier",
-        contactPerson: "Demo Contact",
-        email: "supplier@demo.com",
-        email2: null,
-        phone: null,
-        location: null,
-        moq: null,
-        leadTimes: null,
-        paymentTerms: null,
-        certifications: [],
-        active: true,
-        createdBy: userId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-    }
+    // Create a mock supplier for demo mode (database not required)
+    const supplier = {
+      id: "demo-supplier-id",
+      supplierName: "Demo Food Production Supplier",
+      contactPerson: "Demo Contact",
+      email: "supplier@demo.com",
+      email2: null,
+      phone: null,
+      location: null,
+      moq: null,
+      leadTimes: null,
+      paymentTerms: null,
+      certifications: [],
+      active: true,
+      createdBy: userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
     // Attach supplier info to request for downstream handlers
     req.supplier = supplier;

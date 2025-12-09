@@ -5,7 +5,7 @@ import 'isomorphic-fetch';
 import type { EmailRecipient, RFQEmailData } from './emailService';
 import { getBaseUrl } from '../utils/baseUrl';
 
-function createRFQEmailTemplate(data: RFQEmailData, supplierName: string): string {
+export function createRFQEmailTemplate(data: RFQEmailData, supplierName: string): string {
   const submitByFormatted = data.submitByDate.toLocaleDateString('en-AU', {
     day: 'numeric',
     month: 'long',
@@ -58,12 +58,12 @@ function createRFQEmailTemplate(data: RFQEmailData, supplierName: string): strin
         Dear ${supplierName},
       </div>
       
-      <p>Essential Flavours is requesting a quote for the following raw material. Please review the specifications below and submit your quotation through our secure portal.</p>
+      <p>We are requesting a quote for the following food product. Please review the specifications below and submit your quotation through our secure portal.</p>
       
       <div class="section">
-        <div class="section-title">Material Details</div>
+        <div class="section-title">Product Details</div>
         <div class="detail-row">
-          <div class="detail-label">Material Name:</div>
+          <div class="detail-label">Product Name:</div>
           <div class="detail-value"><strong>${data.materialName}</strong></div>
         </div>
         ${data.casNumber ? `

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { db } from "./db";
+import { db, isDatabaseAvailable } from "./db";
 import { users } from "@shared/schema";
 import { sql } from "drizzle-orm";
 import { setupAuth, isAuthenticated } from "./auth";
@@ -1782,6 +1782,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // In demo mode without database, just log and return success
+      if (!isDatabaseAvailable()) {
+        console.log('📝 Lead captured (demo mode, no database):', validation.data);
+        return res.status(200).json({ success: true, message: "Lead captured (demo mode)" });
+      }
+
       const [lead] = await db.insert(demoLeads).values({
         ...validation.data,
         sessionId: req.body.sessionId || 'unknown-session',
@@ -1792,6 +1798,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error capturing lead:", error);
       // In demo mode, don't fail the user even if DB is unavailable
       res.status(200).json({ success: true, message: "Lead captured (demo mode fallback)" });
+    }
+  });
+
+  // Contact Us endpoint - sends email to mark@3peat.ai and ryan@3peat.ai
+  app.post('/api/contact', async (req: any, res) => {
+    try {
+      const { name, position, email, countryCode, mobileNumber, otherInfo } = req.body;
+
+      if (!name || !position || !email || !countryCode || !mobileNumber) {
+        return res.status(400).json({ message: "Name, position, email, country code, and mobile number are required" });
+      }
+
+      // Create HTML email content
+      const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 20px auto; padding: 20px; }
+    .header { background: #1e40af; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; }
+    .field { margin-bottom: 15px; }
+    .label { font-weight: 600; color: #6b7280; margin-bottom: 5px; }
+    .value { color: #1f2937; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0;">New Contact Form Submission</h1>
+    </div>
+    <div class="content">
+      <div class="field">
+        <div class="label">Name:</div>
+        <div class="value">${name}</div>
+      </div>
+      <div class="field">
+        <div class="label">Position:</div>
+        <div class="value">${position}</div>
+      </div>
+      <div class="field">
+        <div class="label">Email:</div>
+        <div class="value">${email}</div>
+      </div>
+      <div class="field">
+        <div class="label">Mobile Number:</div>
+        <div class="value">${countryCode} ${mobileNumber}</div>
+      </div>
+      ${otherInfo ? `
+      <div class="field">
+        <div class="label">Other Info:</div>
+        <div class="value">${otherInfo.replace(/\n/g, '<br>')}</div>
+      </div>
+      ` : ''}
+      <div class="field" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">
+        Submitted at: ${new Date().toLocaleString()}
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+      `.trim();
+
+      const subject = `Contact Form Submission from ${name}`;
+      const recipients = ['mark@3peat.ai', 'ryan@3peat.ai'];
+
+      // Send email to both recipients
+      const emailPromises = recipients.map(recipient =>
+        emailService.sendEmail(recipient, subject, emailHtml)
+      );
+
+      const results = await Promise.allSettled(emailPromises);
+      
+      const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+      const failedCount = results.length - successCount;
+
+      if (successCount === 0) {
+        console.error('❌ Failed to send contact form emails to all recipients');
+        return res.status(500).json({ 
+          message: "Failed to send message. Please try again later." 
+        });
+      }
+
+      if (failedCount > 0) {
+        console.warn(`⚠️ Contact form: ${successCount} sent, ${failedCount} failed`);
+      } else {
+        console.log(`✅ Contact form emails sent successfully to ${recipients.join(', ')}`);
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Message sent successfully",
+        emailsSent: successCount,
+        emailsFailed: failedCount
+      });
+    } catch (error) {
+      console.error("Error processing contact form:", error);
+      res.status(500).json({ 
+        message: "Failed to send message. Please try again later." 
+      });
     }
   });
 

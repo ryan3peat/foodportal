@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { apiRequest } from "@/lib/queryClient";
 import { getDemoSession } from "@/lib/demoSession";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 
 const leadSchema = z.object({
   name: z.string().min(2, "Name required"),
@@ -73,7 +73,7 @@ export function LeadCaptureModal({ isOpen, onClose, onSubmitted }: LeadCaptureMo
     <AnimatePresence>
       {isOpen && (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-          <DialogContent className="max-w-lg gradient-border glass-card backdrop-blur-xl border-2 p-0 overflow-hidden">
+          <DialogContent className="max-w-lg border bg-background p-0 overflow-hidden !top-[35%] !translate-y-[-50%]">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -82,11 +82,8 @@ export function LeadCaptureModal({ isOpen, onClose, onSubmitted }: LeadCaptureMo
               className="p-6"
             >
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-3 text-2xl font-semibold">
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary via-ring to-accent flex items-center justify-center shadow-lg">
-                    <Sparkles className="h-6 w-6 text-primary-foreground" />
-                  </div>
-                  <span>Ready to Use This for Real?</span>
+                <DialogTitle className="text-2xl font-semibold">
+                  Ready to Use This for Real?
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-6 mt-4">
@@ -176,7 +173,7 @@ export function LeadCaptureModal({ isOpen, onClose, onSubmitted }: LeadCaptureMo
                       <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
                         Continue Demo →
                       </Button>
-                      <Button type="submit" className="flex-1 cta-gradient" data-testid="button-lead-submit">
+                      <Button type="submit" variant="default" className="flex-1" data-testid="button-lead-submit">
                         Get Started - It's Free
                       </Button>
                     </div>

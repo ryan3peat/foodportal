@@ -91,12 +91,12 @@ function createRFQEmailTemplate(data: RFQEmailData, supplierName: string): strin
         Dear ${supplierName},
       </div>
       
-      <p>Essential Flavours is requesting a quote for the following raw material. Please review the specifications below and submit your quotation through our secure portal.</p>
+      <p>We are requesting a quote for the following food product. Please review the specifications below and submit your quotation through our secure portal.</p>
       
       <div class="section">
-        <div class="section-title">Material Details</div>
+        <div class="section-title">Product Details</div>
         <div class="detail-row">
-          <div class="detail-label">Material Name:</div>
+          <div class="detail-label">Product Name:</div>
           <div class="detail-value"><strong>${data.materialName}</strong></div>
         </div>
         ${data.casNumber ? `
@@ -146,13 +146,13 @@ function createRFQEmailTemplate(data: RFQEmailData, supplierName: string): strin
       </div>
       
       <p style="font-size: 14px; color: #6b7280; margin-top: 24px;">
-        If you have any questions regarding this request, please contact our procurement team at procurement@essentialflavours.com.au
+        If you have any questions regarding this request, please contact our procurement team.
       </p>
     </div>
     
     <div class="footer">
-      <p><strong>Essential Flavours</strong></p>
-      <p>Australian Flavour Manufacturer</p>
+      <p><strong>Food Production Portal</strong></p>
+      <p>Australian Food Production</p>
       <p style="margin-top: 12px;">This is an automated message. Please do not reply to this email.</p>
     </div>
   </div>

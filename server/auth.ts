@@ -1,23 +1,38 @@
 import passport from "passport";
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
-import connectPg from "connect-pg-simple";
+import { isDatabaseAvailable } from "./db";
 import { storage } from "./storage";
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
-    ttl: sessionTtl,
-    tableName: "sessions",
-  });
   // Use SESSION_SECRET from env, or generate a default for demo mode
   const sessionSecret = process.env.SESSION_SECRET || 'demo-session-secret-change-in-production';
   
   if (!process.env.SESSION_SECRET) {
     console.warn('⚠️  SESSION_SECRET not set. Using default for demo mode. Set SESSION_SECRET in .env.local for production.');
+  }
+
+  // Use memory store in demo mode, PostgreSQL store if database is available
+  let sessionStore: session.Store;
+  if (isDatabaseAvailable() && process.env.DATABASE_URL) {
+    try {
+      const connectPg = require("connect-pg-simple");
+      const pgStore = connectPg(session);
+      sessionStore = new pgStore({
+        conString: process.env.DATABASE_URL,
+        createTableIfMissing: false,
+        ttl: sessionTtl,
+        tableName: "sessions",
+      });
+    } catch (error) {
+      console.warn('⚠️  Could not initialize PostgreSQL session store, using memory store');
+      sessionStore = new session.MemoryStore();
+    }
+  } else {
+    // Use memory store for demo mode
+    sessionStore = new session.MemoryStore();
+    console.log('📝 Using memory session store (sessions cleared on server restart)');
   }
   
   return session({
@@ -53,18 +68,24 @@ export async function setupAuth(app: Express) {
   });
   
   passport.deserializeUser(async (user: any, cb) => {
+    // Demo mode: Skip database lookups
+    if (!isDatabaseAvailable()) {
+      cb(null, user);
+      return;
+    }
+
     // Deserialize user based on authType
     if (user.authType === "local") {
       try {
         const freshUser = await storage.getUser(user.localAuthUser.id);
-        cb(null, { localAuthUser: freshUser, authType: "local" });
+        cb(null, freshUser ? { localAuthUser: freshUser, authType: "local" } : user);
       } catch (error) {
         cb(error);
       }
     } else if (user.authType === "supplier") {
       try {
         const freshSupplier = await storage.getUser(user.supplierUser.id);
-        cb(null, { supplierUser: freshSupplier, authType: "supplier" });
+        cb(null, freshSupplier ? { supplierUser: freshSupplier, authType: "supplier" } : user);
       } catch (error) {
         cb(error);
       }

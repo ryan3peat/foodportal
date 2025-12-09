@@ -1,5 +1,6 @@
 import { MockEmailService } from './emailService';
 import type { MicrosoftGraphEmailService as MicrosoftGraphEmailServiceType } from './microsoftGraphEmailService';
+import type { GoogleGmailEmailService as GoogleGmailEmailServiceType } from './googleGmailEmailService';
 import type { EmailRecipient, RFQEmailData } from './emailService';
 import type { MagicLinkEmailData } from './magicLinkEmail';
 import { createMagicLinkEmailTemplate } from './magicLinkEmail';
@@ -37,13 +38,21 @@ export class HybridEmailService implements EmailProvider {
   private allowMockFallback: boolean;
   private emailProvider: string;
   private graphProviderInitialized: boolean = false;
+  private googleProviderInitialized: boolean = false;
 
   constructor() {
+    // Allow email provider to be set even in demo mode
+    const isDemoMode = !process.env.DATABASE_URL;
     this.emailProvider = process.env.EMAIL_PROVIDER || 'mock';
     this.allowMockFallback = process.env.ALLOW_MOCK_FALLBACK === 'true';
     this.providerName = this.emailProvider;
 
     console.log(`\n📧 Email Service Configuration:`);
+    if (isDemoMode && this.emailProvider === 'mock') {
+      console.log(`   ⚠️  Demo Mode: Email service disabled (using mock)`);
+    } else if (isDemoMode) {
+      console.log(`   ℹ️  Demo Mode: Using ${this.emailProvider} email provider`);
+    }
     console.log(`   Provider: ${this.emailProvider}`);
     console.log(`   Allow Mock Fallback: ${this.allowMockFallback}`);
 
@@ -54,8 +63,11 @@ export class HybridEmailService implements EmailProvider {
       } else if (this.emailProvider === 'graph') {
         // Graph provider will be initialized lazily on first use
         console.log(`   ⏳ Microsoft Graph email service will be initialized on first use`);
+      } else if (this.emailProvider === 'google') {
+        // Google provider will be initialized lazily on first use
+        console.log(`   ⏳ Google Gmail email service will be initialized on first use`);
       } else {
-        throw new Error(`Invalid EMAIL_PROVIDER: ${this.emailProvider}. Must be 'graph' or 'mock'`);
+        throw new Error(`Invalid EMAIL_PROVIDER: ${this.emailProvider}. Must be 'graph', 'google', or 'mock'`);
       }
 
       if (this.allowMockFallback && this.emailProvider !== 'mock') {
@@ -77,6 +89,14 @@ export class HybridEmailService implements EmailProvider {
     }
 
     console.log(`\n`);
+  }
+
+  private async ensureProviderInitialized(): Promise<void> {
+    if (this.emailProvider === 'graph') {
+      await this.ensureGraphProviderInitialized();
+    } else if (this.emailProvider === 'google') {
+      await this.ensureGoogleProviderInitialized();
+    }
   }
 
   private async ensureGraphProviderInitialized(): Promise<void> {
@@ -103,11 +123,35 @@ export class HybridEmailService implements EmailProvider {
     }
   }
 
+  private async ensureGoogleProviderInitialized(): Promise<void> {
+    if (this.googleProviderInitialized || this.emailProvider !== 'google') {
+      return;
+    }
+
+    try {
+      // Dynamic import - only load when needed to avoid requiring Google credentials
+      const GoogleGmailEmailServiceModule = await import('./googleGmailEmailService');
+      this.primaryProvider = new GoogleGmailEmailServiceModule.GoogleGmailEmailService();
+      this.googleProviderInitialized = true;
+      console.log(`   ✅ Google Gmail email service initialized`);
+    } catch (error) {
+      console.error(`   ❌ Failed to initialize Google Gmail email provider:`, error);
+      
+      if (this.allowMockFallback) {
+        console.log(`   ⚠️  Falling back to mock email service`);
+        this.primaryProvider = new MockEmailService();
+        this.providerName = 'mock (fallback)';
+      } else {
+        throw error;
+      }
+    }
+  }
+
   async sendRFQNotification(
     recipient: EmailRecipient,
     rfqData: RFQEmailData
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
-    await this.ensureGraphProviderInitialized();
+    await this.ensureProviderInitialized();
     
     if (!this.primaryProvider) {
       return {
@@ -148,7 +192,7 @@ export class HybridEmailService implements EmailProvider {
     recipients: EmailRecipient[],
     rfqData: RFQEmailData[]
   ): Promise<{ sent: number; failed: number; results: any[] }> {
-    await this.ensureGraphProviderInitialized();
+    await this.ensureProviderInitialized();
     
     if (!this.primaryProvider) {
       return {
@@ -211,7 +255,7 @@ export class HybridEmailService implements EmailProvider {
     subject: string,
     html: string
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
-    await this.ensureGraphProviderInitialized();
+    await this.ensureProviderInitialized();
     
     if (!this.primaryProvider) {
       return {

@@ -88,7 +88,7 @@ export function createDocumentUploadNotificationTemplate(
           <div class="detail-value"><strong>${data.supplierName}</strong></div>
         </div>
         <div class="detail-row">
-          <div class="detail-label">Material:</div>
+          <div class="detail-label">Product:</div>
           <div class="detail-value">${data.materialName}</div>
         </div>
         <div class="detail-row">

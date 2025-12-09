@@ -1,9 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
+import { isDatabaseAvailable } from '../db';
 
 /**
  * Middleware to validate access tokens for quote submission
  * Checks if token exists, is valid, and hasn't expired
+ * Demo mode: Bypasses token validation
  */
 export async function validateQuoteAccessToken(
   req: Request,
@@ -11,6 +13,11 @@ export async function validateQuoteAccessToken(
   next: NextFunction
 ) {
   try {
+    // Demo mode: Skip token validation if database is not available
+    if (!isDatabaseAvailable()) {
+      return next();
+    }
+
     const { token } = req.query;
     const { id: requestId } = req.params;
 

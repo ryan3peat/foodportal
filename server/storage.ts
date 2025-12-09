@@ -30,7 +30,7 @@ import {
   type SupplierApplication,
   type InsertSupplierApplication,
 } from "@shared/schema";
-import { db } from "./db";
+import { db, isDatabaseAvailable } from "./db";
 import { eq, and, sql, desc } from "drizzle-orm";
 
 // Extended QuoteRequest type with counts and status flags
@@ -150,14 +150,75 @@ export interface IStorage {
   updateSupplierApplicationStatus(id: string, status: 'pending' | 'approved' | 'rejected', reviewedBy: string, reviewNotes?: string): Promise<SupplierApplication | undefined>;
 }
 
+// Demo storage implementation that returns empty/null results
+class DemoStorage implements IStorage {
+  async getUser(id: string): Promise<User | undefined> { return undefined; }
+  async getUserByEmail(email: string): Promise<User | undefined> { return undefined; }
+  async upsertUser(user: UpsertUser): Promise<User> { return user as User; }
+  async createUser(user: Omit<UpsertUser, 'id'>): Promise<User> { return user as User; }
+  async getAllUsers(): Promise<User[]> { return []; }
+  async updateUserRole(id: string, role: 'admin' | 'supplier' | 'procurement'): Promise<User | undefined> { return undefined; }
+  async updateUserStatus(id: string, active: boolean): Promise<User | undefined> { return undefined; }
+  async setUserPassword(id: string, passwordHash: string): Promise<User | undefined> { return undefined; }
+  async setPasswordAndConsumeToken(userId: string, passwordHash: string, tokenId: string): Promise<{ success: boolean; error?: string }> { return { success: false, error: 'Demo mode' }; }
+  async deleteUser(id: string): Promise<void> {}
+  async getSuppliers(): Promise<Supplier[]> { return []; }
+  async getSupplier(id: string): Promise<Supplier | undefined> { return undefined; }
+  async getSupplierByEmail(email: string): Promise<Supplier | undefined> { return undefined; }
+  async createSupplier(supplier: InsertSupplier): Promise<Supplier> { return supplier as Supplier; }
+  async updateSupplier(id: string, supplier: Partial<InsertSupplier>): Promise<Supplier | undefined> { return undefined; }
+  async deleteSupplier(id: string): Promise<void> {}
+  async getQuoteRequests(): Promise<QuoteRequestWithCounts[]> { return []; }
+  async getQuoteRequest(id: string): Promise<QuoteRequest | undefined> { return undefined; }
+  async createQuoteRequest(request: InsertQuoteRequest): Promise<QuoteRequest> { return request as QuoteRequest; }
+  async updateQuoteRequest(id: string, request: Partial<InsertQuoteRequest>): Promise<QuoteRequest | undefined> { return undefined; }
+  async deleteQuoteRequest(id: string): Promise<void> {}
+  async createRequestSupplier(requestSupplier: InsertRequestSupplier): Promise<RequestSupplier> { return requestSupplier as RequestSupplier; }
+  async getRequestSuppliers(requestId: string): Promise<RequestSupplier[]> { return []; }
+  async getRequestSupplierByRequestAndSupplier(requestId: string, supplierId: string): Promise<RequestSupplier | undefined> { return undefined; }
+  async updateRequestSupplier(id: string, data: Partial<InsertRequestSupplier>): Promise<RequestSupplier | undefined> { return undefined; }
+  async getSupplierQuotes(requestId: string): Promise<SupplierQuote[]> { return []; }
+  async getSupplierQuote(quoteId: string): Promise<SupplierQuote | undefined> { return undefined; }
+  async createSupplierQuote(quote: InsertSupplierQuote): Promise<SupplierQuote> { return quote as SupplierQuote; }
+  async updateSupplierQuote(id: string, quote: Partial<InsertSupplierQuote>): Promise<SupplierQuote | undefined> { return undefined; }
+  async getSupplierQuoteRequests(supplierId: string): Promise<Array<{ request: QuoteRequest; requestSupplier: RequestSupplier; quote: SupplierQuote | null; }>> { return []; }
+  async getSupplierDocuments(quoteId: string): Promise<SupplierDocument[]> { return []; }
+  async getSupplierDocumentById(id: string): Promise<SupplierDocument | undefined> { return undefined; }
+  async createSupplierDocument(document: InsertSupplierDocument): Promise<SupplierDocument> { return document as SupplierDocument; }
+  async deleteSupplierDocument(id: string): Promise<void> {}
+  async createDocumentRequest(documentRequest: InsertDocumentRequest): Promise<DocumentRequest> { return documentRequest as DocumentRequest; }
+  async updateDocumentRequestEmailSent(id: string, emailSentAt: Date): Promise<void> {}
+  async updateDocumentRequestStatus(quoteId: string, status: 'pending' | 'completed'): Promise<void> {}
+  async getDocumentRequestsByQuote(quoteId: string): Promise<DocumentRequest[]> { return []; }
+  async getQuoteRequestDetails(requestId: string): Promise<{ request: QuoteRequest; suppliers: Array<{ id: string; supplierName: string; email: string; requestSupplierId: string; emailSentAt: Date | null; quote: SupplierQuote | null; }>; } | undefined> { return undefined; }
+  async getQuoteDetails(quoteId: string): Promise<{ quote: SupplierQuote; supplier: Supplier; request: QuoteRequest; } | undefined> { return undefined; }
+  async getAdminDashboardStats(): Promise<{ activeRequests: number; totalSuppliers: number; pendingQuotes: number; averageResponseTimeHours: number | null; }> { return { activeRequests: 0, totalSuppliers: 0, pendingQuotes: 0, averageResponseTimeHours: null }; }
+  async generateRfqNumber(): Promise<string> { return `RFQ-${new Date().getFullYear()}-001`; }
+  async createMagicLink(magicLink: InsertMagicLink): Promise<MagicLink> { return magicLink as MagicLink; }
+  async getMagicLinkByTokenHash(tokenHash: string): Promise<MagicLink | undefined> { return undefined; }
+  async markMagicLinkAsUsed(id: string): Promise<void> {}
+  async cleanupExpiredMagicLinks(): Promise<number> { return 0; }
+  async createNotification(notification: InsertNotification): Promise<Notification> { return notification as Notification; }
+  async getNotificationsByUser(userId: string, limit?: number): Promise<Notification[]> { return []; }
+  async getUnreadNotificationCount(userId: string): Promise<number> { return 0; }
+  async markNotificationAsRead(id: string): Promise<void> {}
+  async markAllNotificationsAsRead(userId: string): Promise<void> {}
+  async createSupplierApplication(application: InsertSupplierApplication): Promise<SupplierApplication> { return application as SupplierApplication; }
+  async getSupplierApplications(): Promise<SupplierApplication[]> { return []; }
+  async getSupplierApplication(id: string): Promise<SupplierApplication | undefined> { return undefined; }
+  async updateSupplierApplicationStatus(id: string, status: 'pending' | 'approved' | 'rejected', reviewedBy: string, reviewNotes?: string): Promise<SupplierApplication | undefined> { return undefined; }
+}
+
 export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: string): Promise<User | undefined> {
+    if (!isDatabaseAvailable()) return undefined;
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
+    if (!isDatabaseAvailable()) return undefined;
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
   }
@@ -890,4 +951,5 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+// Use demo storage if database is not available, otherwise use database storage
+export const storage = isDatabaseAvailable() ? new DatabaseStorage() : new DemoStorage();

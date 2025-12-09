@@ -315,7 +315,7 @@ function handlePost(path: string, body: any): HandlerResult | null {
     const draft = path.endsWith("/draft");
     const session = getDemoSession();
     const sequence = session.data.quoteRequests.length + 4;
-    const requestNumber = `MF-2025-${sequence.toString().padStart(3, "0")}`;
+    const requestNumber = `RFQ-2025-${sequence.toString().padStart(3, "0")}`;
     const newRequest = {
       id: uuidv4(),
       requestNumber,
@@ -694,6 +694,22 @@ export async function demoFetch(input: RequestInfo | URL, init?: RequestInit): P
   const path = url.pathname;
   const method = (init?.method || "GET").toUpperCase();
   const body = parseBody(init?.body);
+
+  // Forward contact form requests to the real server (bypass demo mode)
+  if (path === "/api/contact" && method === "POST") {
+    // Use the original fetch to make a real server request
+    const originalFetch = (window as any).__originalFetch || fetch;
+    return originalFetch(urlString, {
+      ...init,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers as any),
+      },
+      body: JSON.stringify(body),
+      credentials: "include",
+    });
+  }
 
   const result = routeRequest(method, path, body, url.searchParams);
   await sleep();

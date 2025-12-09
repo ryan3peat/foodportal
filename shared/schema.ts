@@ -25,8 +25,7 @@ export const roleEnum = pgEnum('role', ['admin', 'supplier', 'procurement']);
 export const categoryEnum = pgEnum('category', ['natural', 'synthetic', 'natural_identical']);
 export const formEnum = pgEnum('form', ['liquid', 'powder', 'paste']);
 export const quoteRequestStatusEnum = pgEnum('quote_request_status', ['draft', 'active', 'closed', 'cancelled']);
-export const materialTypeEnum = pgEnum('material_type', ['steel', 'aluminum', 'stainless_steel', 'copper', 'brass', 'bronze', 'titanium', 'other']);
-export const finishEnum = pgEnum('finish', ['painted', 'powder_coated', 'anodized', 'galvanized', 'polished', 'brushed', 'raw', 'other']);
+export const productCategoryEnum = pgEnum('product_category', ['dairy_raw', 'dairy_processed', 'finished_goods', 'ingredients', 'packaging', 'other']);
 export const supplierApplicationStatusEnum = pgEnum('supplier_application_status', ['pending', 'approved', 'rejected']);
 export const quoteStatusEnum = pgEnum('quote_status', ['submitted', 'accepted', 'rejected']);
 // Updated quote status enum to reflect the new workflow
@@ -47,7 +46,10 @@ export const documentTypeEnum = pgEnum('document_type', [
   'natural_status',
   'process_flow',
   'gfsi_cert',
-  'organic'
+  'organic',
+  'haccp_cert',
+  'export_certificate',
+  'fsanz_compliance'
 ]);
 export const documentRequestStatusEnum = pgEnum('document_request_status', ['pending', 'completed']);
 export const notificationTypeEnum = pgEnum('notification_type', [
@@ -121,22 +123,25 @@ export const suppliers = pgTable("suppliers", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Quote requests table (with embedded material details for metal fabrication)
+// Quote requests table (with embedded product details for food production)
 export const quoteRequests = pgTable("quote_requests", {
   id: uuid("id").primaryKey().defaultRandom(),
   requestNumber: varchar("request_number", { length: 50 }).notNull().unique(),
   
-  // Metal fabrication material details
-  materialName: varchar("material_name", { length: 255 }).notNull(),
-  materialType: materialTypeEnum("material_type"),
-  materialGrade: varchar("material_grade", { length: 100 }),
-  thickness: numeric("thickness", { precision: 10, scale: 2 }),
-  dimensions: jsonb("dimensions").$type<{ length?: number; width?: number; height?: number }>(),
-  finish: finishEnum("finish"),
-  tolerance: text("tolerance"),
-  weldingRequirements: text("welding_requirements"),
-  surfaceTreatment: text("surface_treatment"),
-  materialNotes: text("material_notes"),
+  // Food production product details
+  productName: varchar("product_name", { length: 255 }),
+  materialName: varchar("material_name", { length: 255 }).notNull(), // Kept for backward compatibility during transition
+  productCategory: productCategoryEnum("product_category"),
+  productType: varchar("product_type", { length: 255 }),
+  ingredients: text("ingredients"),
+  allergenInformation: text("allergen_information"),
+  nutritionalRequirements: jsonb("nutritional_requirements").$type<Record<string, any>>(),
+  packagingRequirements: text("packaging_requirements"),
+  shelfLife: text("shelf_life"),
+  storageConditions: text("storage_conditions"),
+  certificationsRequired: jsonb("certifications_required").$type<string[]>().default([]),
+  foodSafetyStandards: jsonb("food_safety_standards").$type<string[]>().default([]),
+  materialNotes: text("material_notes"), // Kept for general notes
   
   // Quote request details
   quantityNeeded: numeric("quantity_needed", { precision: 10, scale: 2 }).notNull(),
@@ -300,9 +305,9 @@ export const supplierApplications = pgTable("supplier_applications", {
   qualityProcesses: text("quality_processes"),
   qualityDocumentation: jsonb("quality_documentation").$type<string[]>().default([]),
   
-  // Welding & Surface Treatment
-  weldingCapabilities: jsonb("welding_capabilities").$type<string[]>().default([]),
-  surfaceTreatmentOptions: jsonb("surface_treatment_options").$type<string[]>().default([]),
+  // Food Safety & Quality Systems
+  foodSafetySystems: jsonb("food_safety_systems").$type<string[]>().default([]),
+  traceabilitySystems: jsonb("traceability_systems").$type<string[]>().default([]),
   
   // Capacity
   productionCapacity: text("production_capacity"),
@@ -487,10 +492,13 @@ export const insertSupplierSchema = createInsertSchema(suppliers, {
 });
 
 export const insertQuoteRequestSchema = createInsertSchema(quoteRequests, {
-  materialName: z.string().min(1, "Material name is required"),
+  productName: z.string().min(1, "Product name is required").optional(),
+  materialName: z.string().min(1, "Product name is required"), // Kept for backward compatibility
   quantityNeeded: z.string().min(1, "Quantity is required"),
   unitOfMeasure: z.string().min(1, "Unit of measure is required"),
   submitByDate: z.date(),
+  certificationsRequired: z.array(z.string()).default([]),
+  foodSafetyStandards: z.array(z.string()).default([]),
 }).omit({
   id: true,
   requestNumber: true,
@@ -551,7 +559,10 @@ export const insertDocumentRequestSchema = createInsertSchema(documentRequests, 
     'natural_status',
     'process_flow',
     'gfsi_cert',
-    'organic'
+    'organic',
+    'haccp_cert',
+    'export_certificate',
+    'fsanz_compliance'
   ])).min(1, "At least one document must be selected"),
 }).omit({
   id: true,
@@ -573,8 +584,8 @@ export const insertSupplierApplicationSchema = createInsertSchema(supplierApplic
   certifications: z.array(z.string()).default([]),
   isoCertifications: z.array(z.string()).default([]),
   qualityDocumentation: z.array(z.string()).default([]),
-  weldingCapabilities: z.array(z.string()).default([]),
-  surfaceTreatmentOptions: z.array(z.string()).default([]),
+  foodSafetySystems: z.array(z.string()).default([]),
+  traceabilitySystems: z.array(z.string()).default([]),
   equipmentList: z.array(z.string()).default([]),
 }).omit({
   id: true,

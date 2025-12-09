@@ -18,3 +18,4 @@ ALTER TABLE "quote_requests"
   DROP COLUMN IF EXISTS "packaging_requirements";
 
 
+

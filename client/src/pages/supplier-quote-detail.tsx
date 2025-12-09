@@ -27,15 +27,18 @@ interface QuoteRequestDetail {
   request: {
     id: string;
     requestNumber: string;
+    productName?: string;
     materialName: string;
-    materialType?: string;
-    materialGrade?: string;
-    thickness?: string;
-    dimensions?: { length?: number; width?: number; height?: number };
-    finish?: string;
-    tolerance?: string;
-    weldingRequirements?: string;
-    surfaceTreatment?: string;
+    productCategory?: string;
+    productType?: string;
+    ingredients?: string;
+    allergenInformation?: string;
+    nutritionalRequirements?: string;
+    packagingRequirements?: string;
+    shelfLife?: string;
+    storageConditions?: string;
+    certificationsRequired?: string[];
+    foodSafetyStandards?: string[];
     quantityNeeded: string;
     unitOfMeasure: string;
     submitByDate: string;
@@ -234,14 +237,14 @@ export default function SupplierQuoteDetail() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
-              Material Details
+              Product Details
             </CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <div className="text-sm text-muted-foreground mb-1">Material Name</div>
-              <div className="font-semibold" data-testid="text-material-name">
-                {request.materialName}
+              <div className="text-sm text-muted-foreground mb-1">Product Name</div>
+              <div className="font-semibold" data-testid="text-product-name">
+                {request.productName || request.materialName}
               </div>
             </div>
             <div>
@@ -250,56 +253,40 @@ export default function SupplierQuoteDetail() {
                 {request.quantityNeeded} {request.unitOfMeasure}
               </div>
             </div>
-            {request.materialType && (
+            {request.productCategory && (
               <div>
-                <div className="text-sm text-muted-foreground mb-1">Material Type</div>
-                <div className="font-semibold capitalize">{request.materialType.replace("_", " ")}</div>
+                <div className="text-sm text-muted-foreground mb-1">Product Category</div>
+                <div className="font-semibold capitalize">{request.productCategory.replace("_", " ")}</div>
               </div>
             )}
-            {request.materialGrade && (
+            {request.productType && (
               <div>
-                <div className="text-sm text-muted-foreground mb-1">Material Grade</div>
-                <div className="font-semibold">{request.materialGrade}</div>
+                <div className="text-sm text-muted-foreground mb-1">Product Type</div>
+                <div className="font-semibold">{request.productType}</div>
               </div>
             )}
-            {request.thickness && (
+            {request.shelfLife && (
               <div>
-                <div className="text-sm text-muted-foreground mb-1">Thickness</div>
-                <div className="font-semibold">{request.thickness} mm</div>
+                <div className="text-sm text-muted-foreground mb-1">Shelf Life</div>
+                <div className="font-semibold">{request.shelfLife}</div>
               </div>
             )}
-            {request.finish && (
+            {request.storageConditions && (
               <div>
-                <div className="text-sm text-muted-foreground mb-1">Finish</div>
-                <div className="font-semibold capitalize">{request.finish.replace("_", " ")}</div>
+                <div className="text-sm text-muted-foreground mb-1">Storage Conditions</div>
+                <div className="font-semibold">{request.storageConditions}</div>
               </div>
             )}
-            {request.dimensions && (request.dimensions.length || request.dimensions.width || request.dimensions.height) && (
+            {request.certificationsRequired && request.certificationsRequired.length > 0 && (
               <div>
-                <div className="text-sm text-muted-foreground mb-1">Dimensions</div>
-                <div className="font-semibold">
-                  {request.dimensions.length && `${request.dimensions.length}mm`}
-                  {request.dimensions.width && ` × ${request.dimensions.width}mm`}
-                  {request.dimensions.height && ` × ${request.dimensions.height}mm`}
-                </div>
+                <div className="text-sm text-muted-foreground mb-1">Required Certifications</div>
+                <div className="font-semibold">{request.certificationsRequired.join(", ")}</div>
               </div>
             )}
-            {request.tolerance && (
+            {request.foodSafetyStandards && request.foodSafetyStandards.length > 0 && (
               <div>
-                <div className="text-sm text-muted-foreground mb-1">Tolerance</div>
-                <div className="font-semibold">{request.tolerance}</div>
-              </div>
-            )}
-            {request.weldingRequirements && (
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">Welding Requirements</div>
-                <div className="font-semibold">{request.weldingRequirements}</div>
-              </div>
-            )}
-            {request.surfaceTreatment && (
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">Surface Treatment</div>
-                <div className="font-semibold">{request.surfaceTreatment}</div>
+                <div className="text-sm text-muted-foreground mb-1">Food Safety Standards</div>
+                <div className="font-semibold">{request.foodSafetyStandards.join(", ")}</div>
               </div>
             )}
             <div>

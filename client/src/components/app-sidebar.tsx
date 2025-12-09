@@ -114,7 +114,7 @@ export function AppSidebar() {
             </div>
             <div>
               <h2 className="font-medium text-foreground">Supplier Portal</h2>
-              <p className="text-xs text-muted-foreground">Metal Fabrication</p>
+              <p className="text-xs text-muted-foreground">Food Production</p>
             </div>
           </div>
         </div>

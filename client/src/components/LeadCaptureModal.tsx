@@ -151,7 +151,7 @@ export function LeadCaptureModal({ isOpen, onClose, onSubmitted }: LeadCaptureMo
                         <FormItem>
                           <FormLabel>Company Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="MetalFab Industries" {...field} className="bg-background/50" />
+                            <Input placeholder="Food Production Company" {...field} className="bg-background/50" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

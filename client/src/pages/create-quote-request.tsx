@@ -34,20 +34,19 @@ import { useToast } from "@/hooks/use-toast";
 import type { Supplier } from "@shared/schema";
 
 const quoteRequestSchema = z.object({
-  // Step 1: Material Details (Metal Fabrication)
-  materialName: z.string().min(1, "Material name is required"),
-  materialType: z.enum(["steel", "aluminum", "stainless_steel", "copper", "brass", "bronze", "titanium", "other"]).optional(),
-  materialGrade: z.string().optional(),
-  thickness: z.string().optional(),
-  dimensions: z.object({
-    length: z.number().optional(),
-    width: z.number().optional(),
-    height: z.number().optional(),
-  }).optional(),
-  finish: z.enum(["painted", "powder_coated", "anodized", "galvanized", "polished", "brushed", "raw", "other"]).optional(),
-  tolerance: z.string().optional(),
-  weldingRequirements: z.string().optional(),
-  surfaceTreatment: z.string().optional(),
+  // Step 1: Product Details (Food Production)
+  productName: z.string().min(1, "Product name is required"),
+  materialName: z.string().min(1, "Product name is required"), // Kept for backward compatibility
+  productCategory: z.enum(["dairy_raw", "dairy_processed", "finished_goods", "ingredients", "packaging", "other"]).optional(),
+  productType: z.string().optional(),
+  ingredients: z.string().optional(),
+  allergenInformation: z.string().optional(),
+  nutritionalRequirements: z.string().optional(),
+  packagingRequirements: z.string().optional(),
+  shelfLife: z.string().optional(),
+  storageConditions: z.string().optional(),
+  certificationsRequired: z.array(z.string()).default([]),
+  foodSafetyStandards: z.array(z.string()).default([]),
   materialNotes: z.string().optional(),
   
   // Step 2: Specifications
@@ -69,19 +68,18 @@ const quoteRequestSchema = z.object({
 });
 
 const draftSchema = z.object({
+  productName: z.string().optional(),
   materialName: z.string().optional(),
-  materialType: z.enum(["steel", "aluminum", "stainless_steel", "copper", "brass", "bronze", "titanium", "other"]).optional(),
-  materialGrade: z.string().optional(),
-  thickness: z.string().optional(),
-  dimensions: z.object({
-    length: z.number().optional(),
-    width: z.number().optional(),
-    height: z.number().optional(),
-  }).optional(),
-  finish: z.enum(["painted", "powder_coated", "anodized", "galvanized", "polished", "brushed", "raw", "other"]).optional(),
-  tolerance: z.string().optional(),
-  weldingRequirements: z.string().optional(),
-  surfaceTreatment: z.string().optional(),
+  productCategory: z.enum(["dairy_raw", "dairy_processed", "finished_goods", "ingredients", "packaging", "other"]).optional(),
+  productType: z.string().optional(),
+  ingredients: z.string().optional(),
+  allergenInformation: z.string().optional(),
+  nutritionalRequirements: z.string().optional(),
+  packagingRequirements: z.string().optional(),
+  shelfLife: z.string().optional(),
+  storageConditions: z.string().optional(),
+  certificationsRequired: z.array(z.string()).default([]),
+  foodSafetyStandards: z.array(z.string()).default([]),
   materialNotes: z.string().optional(),
   quantityNeeded: z.string().optional(),
   unitOfMeasure: z.string().optional(),
@@ -94,7 +92,7 @@ const draftSchema = z.object({
 type QuoteRequestFormData = z.infer<typeof quoteRequestSchema>;
 
 const steps = [
-  { id: 1, name: "Material Details", icon: FlaskConical },
+  { id: 1, name: "Product Details", icon: FlaskConical },
   { id: 2, name: "Specifications", icon: FileText },
   { id: 3, name: "Supplier Selection", icon: Users },
   { id: 4, name: "Review & Submit", icon: CheckCircle2 },
@@ -108,18 +106,21 @@ export default function CreateQuoteRequest() {
   const form = useForm<QuoteRequestFormData>({
     resolver: zodResolver(quoteRequestSchema),
     defaultValues: {
+      productName: "",
       materialName: "",
-      materialType: undefined,
-      materialGrade: "",
-      thickness: "",
-      dimensions: undefined,
-      finish: undefined,
-      tolerance: "",
-      weldingRequirements: "",
-      surfaceTreatment: "",
+      productCategory: undefined,
+      productType: "",
+      ingredients: "",
+      allergenInformation: "",
+      nutritionalRequirements: "",
+      packagingRequirements: "",
+      shelfLife: "",
+      storageConditions: "",
+      certificationsRequired: [],
+      foodSafetyStandards: [],
       materialNotes: "",
       quantityNeeded: "",
-      unitOfMeasure: "units",
+      unitOfMeasure: "kg",
       additionalSpecifications: "",
       supplierIds: [],
       findNewSuppliers: false,
@@ -223,7 +224,7 @@ export default function CreateQuoteRequest() {
   const getFieldsForStep = (step: number): (keyof QuoteRequestFormData)[] => {
     switch (step) {
       case 1:
-        return ["materialName"];
+        return ["productName", "materialName"];
       case 2:
         return ["quantityNeeded", "unitOfMeasure", "submitByDate"];
       case 3:
@@ -243,7 +244,7 @@ export default function CreateQuoteRequest() {
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Create Quote Request</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Request quotes from suppliers for raw materials
+          Request quotes from suppliers for food products
         </p>
       </div>
 
@@ -307,27 +308,32 @@ export default function CreateQuoteRequest() {
           }}
           className="space-y-6"
         >
-          {/* Step 1: Material Details */}
+          {/* Step 1: Product Details */}
           {currentStep === 1 && (
             <Card>
               <CardHeader>
-                <CardTitle>Material Details</CardTitle>
+                <CardTitle>Product Details</CardTitle>
                 <CardDescription>
-                  Provide information about the raw material you need
+                  Provide information about the food product you need
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="materialName"
+                  name="productName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Material Name *</FormLabel>
+                      <FormLabel>Product Name *</FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="e.g., Steel Plate, Aluminum Sheet" 
-                          {...field} 
-                          data-testid="input-material-name"
+                          placeholder="e.g., Milk Powder, Cheese, Sauce" 
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            // Also update materialName for backward compatibility
+                            form.setValue("materialName", e.target.value);
+                          }}
+                          data-testid="input-product-name"
                         />
                       </FormControl>
                       <FormMessage />
@@ -338,27 +344,25 @@ export default function CreateQuoteRequest() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="materialType"
+                    name="productCategory"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Material Type</FormLabel>
+                        <FormLabel>Product Category</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
                         >
                           <FormControl>
-                            <SelectTrigger data-testid="select-material-type">
-                              <SelectValue placeholder="Select material type" />
+                            <SelectTrigger data-testid="select-product-category">
+                              <SelectValue placeholder="Select product category" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="steel">Steel</SelectItem>
-                            <SelectItem value="aluminum">Aluminum</SelectItem>
-                            <SelectItem value="stainless_steel">Stainless Steel</SelectItem>
-                            <SelectItem value="copper">Copper</SelectItem>
-                            <SelectItem value="brass">Brass</SelectItem>
-                            <SelectItem value="bronze">Bronze</SelectItem>
-                            <SelectItem value="titanium">Titanium</SelectItem>
+                            <SelectItem value="dairy_raw">Raw Dairy</SelectItem>
+                            <SelectItem value="dairy_processed">Processed Dairy</SelectItem>
+                            <SelectItem value="finished_goods">Finished Goods</SelectItem>
+                            <SelectItem value="ingredients">Ingredients</SelectItem>
+                            <SelectItem value="packaging">Packaging</SelectItem>
                             <SelectItem value="other">Other</SelectItem>
                           </SelectContent>
                         </Select>
@@ -369,187 +373,15 @@ export default function CreateQuoteRequest() {
 
                   <FormField
                     control={form.control}
-                    name="materialGrade"
+                    name="productType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Material Grade</FormLabel>
+                        <FormLabel>Product Type</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="e.g., 304, 316, 6061-T6" 
+                            placeholder="e.g., Milk Powder, Cheddar Cheese, Tomato Sauce" 
                             {...field} 
-                            data-testid="input-material-grade"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="thickness"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Thickness (mm)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number"
-                            step="0.01"
-                            placeholder="e.g., 5.0" 
-                            {...field} 
-                            data-testid="input-thickness"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="finish"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Finish</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-finish">
-                              <SelectValue placeholder="Select finish" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="painted">Painted</SelectItem>
-                            <SelectItem value="powder_coated">Powder Coated</SelectItem>
-                            <SelectItem value="anodized">Anodized</SelectItem>
-                            <SelectItem value="galvanized">Galvanized</SelectItem>
-                            <SelectItem value="polished">Polished</SelectItem>
-                            <SelectItem value="brushed">Brushed</SelectItem>
-                            <SelectItem value="raw">Raw</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="dimensions.length"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Length (mm)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number"
-                            step="0.01"
-                            placeholder="Length" 
-                            {...field}
-                            value={field.value || ""}
-                            onChange={(e) => {
-                              const value = e.target.value ? parseFloat(e.target.value) : undefined;
-                              const current = form.getValues("dimensions") || {};
-                              form.setValue("dimensions", { ...current, length: value });
-                            }}
-                            data-testid="input-dimensions-length"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="dimensions.width"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Width (mm)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number"
-                            step="0.01"
-                            placeholder="Width" 
-                            {...field}
-                            value={field.value || ""}
-                            onChange={(e) => {
-                              const value = e.target.value ? parseFloat(e.target.value) : undefined;
-                              const current = form.getValues("dimensions") || {};
-                              form.setValue("dimensions", { ...current, width: value });
-                            }}
-                            data-testid="input-dimensions-width"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="dimensions.height"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Height (mm)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number"
-                            step="0.01"
-                            placeholder="Height" 
-                            {...field}
-                            value={field.value || ""}
-                            onChange={(e) => {
-                              const value = e.target.value ? parseFloat(e.target.value) : undefined;
-                              const current = form.getValues("dimensions") || {};
-                              form.setValue("dimensions", { ...current, height: value });
-                            }}
-                            data-testid="input-dimensions-height"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="tolerance"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tolerance</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="e.g., ±0.1mm" 
-                            {...field} 
-                            data-testid="input-tolerance"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="weldingRequirements"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Welding Requirements</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="e.g., TIG welding, full penetration welds" 
-                            {...field} 
-                            rows={3}
-                            data-testid="textarea-welding-requirements"
+                            data-testid="input-product-type"
                           />
                         </FormControl>
                         <FormMessage />
@@ -560,18 +392,234 @@ export default function CreateQuoteRequest() {
 
                 <FormField
                   control={form.control}
-                  name="surfaceTreatment"
+                  name="ingredients"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Surface Treatment</FormLabel>
+                      <FormLabel>Ingredients</FormLabel>
                       <FormControl>
                         <Textarea 
-                          placeholder="e.g., Shot blasting, primer coating" 
+                          placeholder="List all ingredients, including any additives or preservatives..." 
                           {...field} 
                           rows={3}
-                          data-testid="textarea-surface-treatment"
+                          data-testid="textarea-ingredients"
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="allergenInformation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Allergen Information</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="e.g., Contains: Milk, Soy. May contain traces of: Nuts, Eggs. Common allergens: Milk, Eggs, Soy, Nuts, Wheat, Fish, Shellfish" 
+                          {...field} 
+                          rows={3}
+                          data-testid="textarea-allergen-information"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        List all allergens present in the product or potential cross-contamination risks
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="nutritionalRequirements"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nutritional Requirements</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="e.g., Per 100g: Calories 250, Protein 15g, Fat 10g, Carbs 25g. Or specify any specific nutritional targets or restrictions..." 
+                          {...field} 
+                          rows={3}
+                          data-testid="textarea-nutritional-requirements"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="packagingRequirements"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Packaging Requirements</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="e.g., Aseptic cartons, 1L volume. Or: Glass jars, 500g net weight. Include packaging type, size, materials, and any special requirements..." 
+                          {...field} 
+                          rows={3}
+                          data-testid="textarea-packaging-requirements"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="shelfLife"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Shelf Life</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g., 12 months, 6 months unopened" 
+                            {...field} 
+                            data-testid="input-shelf-life"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="storageConditions"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Storage Conditions</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="e.g., Store at 2-4°C, Keep frozen at -18°C, Store in dry place below 25°C" 
+                            {...field} 
+                            rows={3}
+                            data-testid="textarea-storage-conditions"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="certificationsRequired"
+                  render={() => (
+                    <FormItem>
+                      <div className="mb-4">
+                        <FormLabel>Required Certifications</FormLabel>
+                        <FormDescription>
+                          Select all certifications required for this product
+                        </FormDescription>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {[
+                          { value: "HACCP", label: "HACCP" },
+                          { value: "ISO 22000", label: "ISO 22000" },
+                          { value: "FSANZ", label: "FSANZ Compliance" },
+                          { value: "Organic", label: "Organic" },
+                          { value: "Halal", label: "Halal" },
+                          { value: "Kosher", label: "Kosher" },
+                          { value: "GFSI", label: "GFSI Certified" },
+                          { value: "BRC", label: "BRC" },
+                          { value: "SQF", label: "SQF" },
+                        ].map((cert) => (
+                          <FormField
+                            key={cert.value}
+                            control={form.control}
+                            name="certificationsRequired"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  key={cert.value}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(cert.value)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([...field.value, cert.value])
+                                          : field.onChange(
+                                              field.value?.filter(
+                                                (value) => value !== cert.value
+                                              )
+                                            );
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="font-normal cursor-pointer">
+                                    {cert.label}
+                                  </FormLabel>
+                                </FormItem>
+                              );
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="foodSafetyStandards"
+                  render={() => (
+                    <FormItem>
+                      <div className="mb-4">
+                        <FormLabel>Food Safety Standards</FormLabel>
+                        <FormDescription>
+                          Select applicable food safety standards and compliance requirements
+                        </FormDescription>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {[
+                          { value: "FSANZ", label: "FSANZ (Food Standards Australia New Zealand)" },
+                          { value: "Export Standards", label: "Export Standards" },
+                          { value: "AQIS Compliance", label: "AQIS Compliance" },
+                          { value: "EU Standards", label: "EU Standards" },
+                        ].map((standard) => (
+                          <FormField
+                            key={standard.value}
+                            control={form.control}
+                            name="foodSafetyStandards"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  key={standard.value}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(standard.value)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([...field.value, standard.value])
+                                          : field.onChange(
+                                              field.value?.filter(
+                                                (value) => value !== standard.value
+                                              )
+                                            );
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="font-normal cursor-pointer">
+                                    {standard.label}
+                                  </FormLabel>
+                                </FormItem>
+                              );
+                            }}
+                          />
+                        ))}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -585,11 +633,11 @@ export default function CreateQuoteRequest() {
                       <FormLabel>Additional Notes</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Any additional information about the material..."
+                          placeholder="Any additional information about the product..."
                           className="resize-none"
                           rows={3}
                           {...field}
-                          data-testid="textarea-material-notes"
+                          data-testid="textarea-product-notes"
                         />
                       </FormControl>
                       <FormMessage />
@@ -636,13 +684,26 @@ export default function CreateQuoteRequest() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Unit of Measure *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="e.g., kg, L, g" 
-                            {...field} 
-                            data-testid="input-unit"
-                          />
-                        </FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-unit">
+                              <SelectValue placeholder="Select unit" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="kg">Kilograms (kg)</SelectItem>
+                            <SelectItem value="g">Grams (g)</SelectItem>
+                            <SelectItem value="L">Litres (L)</SelectItem>
+                            <SelectItem value="mL">Millilitres (mL)</SelectItem>
+                            <SelectItem value="units">Units</SelectItem>
+                            <SelectItem value="cartons">Cartons</SelectItem>
+                            <SelectItem value="pallets">Pallets</SelectItem>
+                            <SelectItem value="cases">Cases</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -700,7 +761,7 @@ export default function CreateQuoteRequest() {
                       <FormLabel>Additional Specifications</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Purity requirements, testing standards, delivery terms..."
+                          placeholder="Quality requirements, testing standards, delivery terms, special handling instructions, batch traceability requirements..."
                           className="resize-none"
                           rows={4}
                           {...field}
@@ -810,7 +871,7 @@ export default function CreateQuoteRequest() {
                           Help find new suppliers
                         </FormLabel>
                         <FormDescription>
-                          We will search for additional suppliers for this material
+                          We will search for additional suppliers for this product
                         </FormDescription>
                       </div>
                     </FormItem>
@@ -832,62 +893,70 @@ export default function CreateQuoteRequest() {
               <CardContent className="space-y-6">
                 <div className="space-y-4">
                   <div>
-                    <h3 className="font-medium text-sm text-muted-foreground mb-3">Material Details</h3>
+                    <h3 className="font-medium text-sm text-muted-foreground mb-3">Product Details</h3>
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <span className="text-muted-foreground">Material:</span>
-                        <p className="font-medium" data-testid="review-material-name">{form.watch("materialName")}</p>
+                        <span className="text-muted-foreground">Product:</span>
+                        <p className="font-medium" data-testid="review-product-name">{form.watch("productName") || form.watch("materialName")}</p>
                       </div>
-                      {form.watch("materialType") && (
+                      {form.watch("productCategory") && (
+                        <div>
+                          <span className="text-muted-foreground">Category:</span>
+                          <p className="font-medium capitalize">{form.watch("productCategory")?.replace("_", " ")}</p>
+                        </div>
+                      )}
+                      {form.watch("productType") && (
                         <div>
                           <span className="text-muted-foreground">Type:</span>
-                          <p className="font-medium capitalize">{form.watch("materialType")?.replace("_", " ")}</p>
+                          <p className="font-medium">{form.watch("productType")}</p>
                         </div>
                       )}
-                      {form.watch("materialGrade") && (
-                        <div>
-                          <span className="text-muted-foreground">Grade:</span>
-                          <p className="font-medium">{form.watch("materialGrade")}</p>
-                        </div>
-                      )}
-                      {form.watch("thickness") && (
-                        <div>
-                          <span className="text-muted-foreground">Thickness:</span>
-                          <p className="font-medium">{form.watch("thickness")} mm</p>
-                        </div>
-                      )}
-                      {form.watch("finish") && (
-                        <div>
-                          <span className="text-muted-foreground">Finish:</span>
-                          <p className="font-medium capitalize">{form.watch("finish")?.replace("_", " ")}</p>
-                        </div>
-                      )}
-                      {form.watch("dimensions") && (form.watch("dimensions")?.length || form.watch("dimensions")?.width || form.watch("dimensions")?.height) && (
-                        <div>
-                          <span className="text-muted-foreground">Dimensions:</span>
-                          <p className="font-medium">
-                            {form.watch("dimensions")?.length && `${form.watch("dimensions")?.length}mm`}
-                            {form.watch("dimensions")?.width && ` × ${form.watch("dimensions")?.width}mm`}
-                            {form.watch("dimensions")?.height && ` × ${form.watch("dimensions")?.height}mm`}
-                          </p>
-                        </div>
-                      )}
-                      {form.watch("tolerance") && (
-                        <div>
-                          <span className="text-muted-foreground">Tolerance:</span>
-                          <p className="font-medium">{form.watch("tolerance")}</p>
-                        </div>
-                      )}
-                      {form.watch("weldingRequirements") && (
+                      {form.watch("ingredients") && (
                         <div className="col-span-2">
-                          <span className="text-muted-foreground">Welding Requirements:</span>
-                          <p className="font-medium">{form.watch("weldingRequirements")}</p>
+                          <span className="text-muted-foreground">Ingredients:</span>
+                          <p className="font-medium whitespace-pre-wrap">{form.watch("ingredients")}</p>
                         </div>
                       )}
-                      {form.watch("surfaceTreatment") && (
+                      {form.watch("allergenInformation") && (
                         <div className="col-span-2">
-                          <span className="text-muted-foreground">Surface Treatment:</span>
-                          <p className="font-medium">{form.watch("surfaceTreatment")}</p>
+                          <span className="text-muted-foreground">Allergen Information:</span>
+                          <p className="font-medium whitespace-pre-wrap">{form.watch("allergenInformation")}</p>
+                        </div>
+                      )}
+                      {form.watch("nutritionalRequirements") && (
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">Nutritional Requirements:</span>
+                          <p className="font-medium whitespace-pre-wrap">{form.watch("nutritionalRequirements")}</p>
+                        </div>
+                      )}
+                      {form.watch("packagingRequirements") && (
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">Packaging Requirements:</span>
+                          <p className="font-medium whitespace-pre-wrap">{form.watch("packagingRequirements")}</p>
+                        </div>
+                      )}
+                      {form.watch("shelfLife") && (
+                        <div>
+                          <span className="text-muted-foreground">Shelf Life:</span>
+                          <p className="font-medium">{form.watch("shelfLife")}</p>
+                        </div>
+                      )}
+                      {form.watch("storageConditions") && (
+                        <div>
+                          <span className="text-muted-foreground">Storage Conditions:</span>
+                          <p className="font-medium whitespace-pre-wrap">{form.watch("storageConditions")}</p>
+                        </div>
+                      )}
+                      {form.watch("certificationsRequired") && form.watch("certificationsRequired").length > 0 && (
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">Required Certifications:</span>
+                          <p className="font-medium">{form.watch("certificationsRequired")?.join(", ")}</p>
+                        </div>
+                      )}
+                      {form.watch("foodSafetyStandards") && form.watch("foodSafetyStandards").length > 0 && (
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">Food Safety Standards:</span>
+                          <p className="font-medium">{form.watch("foodSafetyStandards")?.join(", ")}</p>
                         </div>
                       )}
                     </div>

@@ -114,10 +114,12 @@ export default function QuoteRequests() {
   });
 
   const filteredRequests = requests.filter((request) => {
+    const productName = (request as any).productName || request.materialName;
     const matchesSearch =
       searchQuery === "" ||
       request.requestNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.materialName.toLowerCase().includes(searchQuery.toLowerCase());
+      productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ((request as any).productType && (request as any).productType.toLowerCase().includes(searchQuery.toLowerCase()));
 
     // Handle status filter including pending-docs special case
     let matchesStatus = true;
@@ -159,7 +161,7 @@ export default function QuoteRequests() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by RFQ number or material..."
+                  placeholder="Search by RFQ number or product..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
@@ -223,7 +225,7 @@ export default function QuoteRequests() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>RFQ Number</TableHead>
-                    <TableHead>Material</TableHead>
+                    <TableHead>Product</TableHead>
                     <TableHead>Quantity</TableHead>
                     <TableHead>Quotes</TableHead>
                     <TableHead>Submit By</TableHead>
@@ -245,12 +247,17 @@ export default function QuoteRequests() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium text-sm" data-testid={`text-material-${request.id}`}>
-                            {request.materialName}
+                          <p className="font-medium text-sm" data-testid={`text-product-${request.id}`}>
+                            {(request as any).productName || request.materialName}
                           </p>
-                          {request.materialType && (
+                          {(request as any).productCategory && (
                             <p className="text-xs text-muted-foreground capitalize">
-                              {request.materialType.replace("_", " ")}
+                              {(request as any).productCategory.replace("_", " ")}
+                            </p>
+                          )}
+                          {(request as any).productType && (
+                            <p className="text-xs text-muted-foreground">
+                              {(request as any).productType}
                             </p>
                           )}
                         </div>

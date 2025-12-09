@@ -51,9 +51,9 @@ const applicationSchema = z.object({
   qualityProcesses: z.string().optional(),
   qualityDocumentation: z.array(z.string()).default([]),
 
-  // Step 5: Welding & Surface Treatment
-  weldingCapabilities: z.array(z.string()).default([]),
-  surfaceTreatmentOptions: z.array(z.string()).default([]),
+  // Step 5: Food Safety & Quality Systems
+  foodSafetySystems: z.array(z.string()).default([]),
+  traceabilitySystems: z.array(z.string()).default([]),
 
   // Step 6: Capacity
   productionCapacity: z.string().optional(),
@@ -66,37 +66,34 @@ type ApplicationFormData = z.infer<typeof applicationSchema>;
 const steps = [
   { id: 1, name: "Company Information", icon: Building2 },
   { id: 2, name: "Capabilities", icon: Wrench },
-  { id: 3, name: "Materials & Stock", icon: Package },
+  { id: 3, name: "Products & Stock", icon: Package },
   { id: 4, name: "Quality Management", icon: Award },
-  { id: 5, name: "Welding & Surface Treatment", icon: Sparkles },
+  { id: 5, name: "Food Safety & Quality Systems", icon: Sparkles },
   { id: 6, name: "Capacity", icon: Factory },
   { id: 7, name: "Review & Submit", icon: CheckCircle2 },
 ];
 
 const serviceOptions = [
-  "Cutting", "Bending", "Welding", "Machining", "Assembly", "Fabrication",
-  "CNC Machining", "Laser Cutting", "Plasma Cutting", "Waterjet Cutting",
-  "Powder Coating", "Anodizing", "Painting", "Polishing"
+  "Dairy Processing", "Blending & Mixing", "Packaging", "Quality Testing", "Cold Storage",
+  "Pasteurization", "Fermentation", "Drying/Spray Drying", "Canning/Bottling",
+  "Freeze Drying", "Evaporation", "Homogenization", "UHT Processing"
 ];
 
 const materialOptions = [
-  "Steel", "Stainless Steel", "Aluminum", "Copper", "Brass", "Bronze", "Titanium"
+  "Raw Dairy", "Processed Dairy", "Finished Goods", "Ingredients", "Packaging Materials", "Flavors & Additives"
 ];
 
 const certificationOptions = [
-  "ISO 9001", "ISO 14001", "AS/NZS 4801", "OHSAS 18001", "Welding Certifications"
+  "HACCP", "ISO 22000", "FSANZ", "Organic", "Halal", "Kosher", "GFSI", "BRC", "SQF", "FSSC 22000"
 ];
 
 const isoOptions = [
-  "ISO 9001:2015", "ISO 14001:2015", "ISO 45001:2018", "AS9100", "IATF 16949"
+  "ISO 9001:2015", "ISO 14001:2015", "ISO 22000:2018", "ISO 45001:2018", "HACCP", "FSSC 22000"
 ];
 
-const weldingOptions = [
-  "TIG Welding", "MIG Welding", "Stick Welding", "Plasma Welding", "Laser Welding"
-];
-
-const surfaceTreatmentOptions = [
-  "Powder Coating", "Anodizing", "Galvanizing", "Painting", "Polishing", "Brushing"
+const foodSafetyOptions = [
+  "HACCP Implementation", "Traceability Systems", "Batch Tracking", "Supplier Verification",
+  "Allergen Management", "Pathogen Control", "Temperature Monitoring", "Cleaning & Sanitation"
 ];
 
 export default function ApproveSupplier() {
@@ -127,8 +124,8 @@ export default function ApproveSupplier() {
       isoCertifications: [],
       qualityProcesses: "",
       qualityDocumentation: [],
-      weldingCapabilities: [],
-      surfaceTreatmentOptions: [],
+      foodSafetySystems: [],
+      traceabilitySystems: [],
       productionCapacity: "",
       leadTimes: "",
       equipmentList: [],
@@ -593,67 +590,31 @@ export default function ApproveSupplier() {
           <div className="space-y-4">
             <FormField
               control={form.control}
-              name="weldingCapabilities"
+              name="foodSafetySystems"
               render={() => (
                 <FormItem>
-                  <FormLabel>Welding Capabilities</FormLabel>
+                  <FormLabel>Food Safety Systems</FormLabel>
                   <div className="grid grid-cols-2 gap-2">
-                    {weldingOptions.map((welding) => (
+                    {foodSafetyOptions.map((system) => (
                       <FormField
-                        key={welding}
+                        key={system}
                         control={form.control}
-                        name="weldingCapabilities"
+                        name="foodSafetySystems"
                         render={({ field }) => (
                           <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                             <FormControl>
                               <Checkbox
-                                checked={field.value?.includes(welding)}
+                                checked={field.value?.includes(system)}
                                 onCheckedChange={(checked) => {
                                   return checked
-                                    ? field.onChange([...field.value, welding])
+                                    ? field.onChange([...field.value, system])
                                     : field.onChange(
-                                        field.value?.filter((value) => value !== welding)
+                                        field.value?.filter((value) => value !== system)
                                       );
                                 }}
                               />
                             </FormControl>
-                            <FormLabel className="font-normal">{welding}</FormLabel>
-                          </FormItem>
-                        )}
-                      />
-                    ))}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="surfaceTreatmentOptions"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Surface Treatment Options</FormLabel>
-                  <div className="grid grid-cols-2 gap-2">
-                    {surfaceTreatmentOptions.map((treatment) => (
-                      <FormField
-                        key={treatment}
-                        control={form.control}
-                        name="surfaceTreatmentOptions"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value?.includes(treatment)}
-                                onCheckedChange={(checked) => {
-                                  return checked
-                                    ? field.onChange([...field.value, treatment])
-                                    : field.onChange(
-                                        field.value?.filter((value) => value !== treatment)
-                                      );
-                                }}
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal">{treatment}</FormLabel>
+                            <FormLabel className="font-normal">{system}</FormLabel>
                           </FormItem>
                         )}
                       />
@@ -833,5 +794,6 @@ export default function ApproveSupplier() {
     </div>
   );
 }
+
 
 

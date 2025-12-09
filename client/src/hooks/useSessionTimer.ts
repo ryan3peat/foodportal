@@ -52,3 +52,4 @@ export function useSessionTimer(thresholdMinutes = 5, reappearMinutes = 2) {
 
   return { shouldShowPopup, dismissPopup, markSubmitted, sessionStart };
 }
+

@@ -23,15 +23,19 @@ interface QuoteRequestDetails {
   request: {
     id: string;
     requestNumber: string;
+    productName?: string | null;
     materialName: string;
-    materialType: string | null;
-    materialGrade: string | null;
-    thickness: string | null;
-    dimensions: { length?: number; width?: number; height?: number } | null;
-    finish: string | null;
-    tolerance: string | null;
-    weldingRequirements: string | null;
-    surfaceTreatment: string | null;
+    productCategory?: string | null;
+    productType?: string | null;
+    ingredients?: string | null;
+    allergenInformation?: string | null;
+    nutritionalRequirements?: string | null;
+    packagingRequirements?: string | null;
+    shelfLife?: string | null;
+    storageConditions?: string | null;
+    certificationsRequired?: string[] | null;
+    foodSafetyStandards?: string[] | null;
+    materialNotes?: string | null;
     quantityNeeded: string;
     unitOfMeasure: string;
     submitByDate: string;
@@ -468,69 +472,71 @@ export default function QuoteRequestDetail() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-4">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Material Name</p>
+              <p className="text-sm font-medium text-muted-foreground">Product Name</p>
               <p className="text-base font-medium" data-testid="text-material-name">
-                {request.materialName}
+                {request.productName || request.materialName}
               </p>
             </div>
+            {request.productCategory && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Product Category</p>
+                <p className="text-base font-medium capitalize">
+                  {request.productCategory.replace("_", " ")}
+                </p>
+              </div>
+            )}
+            {request.productType && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Product Type</p>
+                <p className="text-base font-medium">{request.productType}</p>
+              </div>
+            )}
             <div>
               <p className="text-sm font-medium text-muted-foreground">Quantity Needed</p>
               <p className="text-base font-medium">
                 {request.quantityNeeded} {request.unitOfMeasure}
               </p>
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Material Type</p>
-              <p className="text-base font-medium capitalize">
-                {request.materialType ? request.materialType.replace("_", " ") : "—"}
-              </p>
-            </div>
-            {request.materialGrade && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Material Grade</p>
-                <p className="text-base font-medium">{request.materialGrade}</p>
-              </div>
-            )}
-            {request.thickness && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Thickness</p>
-                <p className="text-base font-medium">{request.thickness} mm</p>
-              </div>
-            )}
-            {request.finish && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Finish</p>
-                <p className="text-base font-medium capitalize">
-                  {request.finish.replace("_", " ")}
-                </p>
-              </div>
-            )}
-            {request.dimensions && (request.dimensions.length || request.dimensions.width || request.dimensions.height) && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Dimensions</p>
-                <p className="text-base font-medium">
-                  {request.dimensions.length && `${request.dimensions.length}mm`}
-                  {request.dimensions.width && ` × ${request.dimensions.width}mm`}
-                  {request.dimensions.height && ` × ${request.dimensions.height}mm`}
-                </p>
-              </div>
-            )}
-            {request.tolerance && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Tolerance</p>
-                <p className="text-base font-medium">{request.tolerance}</p>
-              </div>
-            )}
-            {request.weldingRequirements && (
+            {request.ingredients && (
               <div className="col-span-2">
-                <p className="text-sm font-medium text-muted-foreground">Welding Requirements</p>
-                <p className="text-base font-medium">{request.weldingRequirements}</p>
+                <p className="text-sm font-medium text-muted-foreground">Ingredients</p>
+                <p className="text-base font-medium">{request.ingredients}</p>
               </div>
             )}
-            {request.surfaceTreatment && (
+            {request.allergenInformation && (
               <div className="col-span-2">
-                <p className="text-sm font-medium text-muted-foreground">Surface Treatment</p>
-                <p className="text-base font-medium">{request.surfaceTreatment}</p>
+                <p className="text-sm font-medium text-muted-foreground">Allergen Information</p>
+                <p className="text-base font-medium">{request.allergenInformation}</p>
+              </div>
+            )}
+            {request.packagingRequirements && (
+              <div className="col-span-2">
+                <p className="text-sm font-medium text-muted-foreground">Packaging Requirements</p>
+                <p className="text-base font-medium">{request.packagingRequirements}</p>
+              </div>
+            )}
+            {request.shelfLife && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Shelf Life</p>
+                <p className="text-base font-medium">{request.shelfLife}</p>
+              </div>
+            )}
+            {request.storageConditions && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Storage Conditions</p>
+                <p className="text-base font-medium">{request.storageConditions}</p>
+              </div>
+            )}
+            {request.certificationsRequired && request.certificationsRequired.length > 0 && (
+              <div className="col-span-2">
+                <p className="text-sm font-medium text-muted-foreground">Certifications Required</p>
+                <p className="text-base font-medium">{request.certificationsRequired.join(", ")}</p>
+              </div>
+            )}
+            {request.foodSafetyStandards && request.foodSafetyStandards.length > 0 && (
+              <div className="col-span-2">
+                <p className="text-sm font-medium text-muted-foreground">Food Safety Standards</p>
+                <p className="text-base font-medium">{request.foodSafetyStandards.join(", ")}</p>
               </div>
             )}
           </div>

@@ -261,69 +261,65 @@ export default function QuoteSubmission() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
-              Material Details
+              Product Details
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="text-muted-foreground">Material Name</Label>
-                <div className="font-medium text-foreground mt-1">{request.materialName}</div>
+                <Label className="text-muted-foreground">Product Name</Label>
+                <div className="font-medium text-foreground mt-1">{request.productName || request.materialName}</div>
               </div>
-              {request.materialType && (
+              {request.productCategory && (
                 <div>
-                  <Label className="text-muted-foreground">Material Type</Label>
+                  <Label className="text-muted-foreground">Product Category</Label>
                   <div className="font-medium text-foreground mt-1 capitalize">
-                    {request.materialType.replace("_", " ")}
+                    {request.productCategory.replace("_", " ")}
                   </div>
                 </div>
               )}
-              {request.materialGrade && (
+              {request.productType && (
                 <div>
-                  <Label className="text-muted-foreground">Material Grade</Label>
-                  <div className="font-medium text-foreground mt-1">{request.materialGrade}</div>
+                  <Label className="text-muted-foreground">Product Type</Label>
+                  <div className="font-medium text-foreground mt-1">{request.productType}</div>
                 </div>
               )}
-              {request.thickness && (
-                <div>
-                  <Label className="text-muted-foreground">Thickness</Label>
-                  <div className="font-medium text-foreground mt-1">{request.thickness} mm</div>
+              {request.ingredients && (
+                <div className="md:col-span-2">
+                  <Label className="text-muted-foreground">Ingredients</Label>
+                  <div className="font-medium text-foreground mt-1">{request.ingredients}</div>
                 </div>
               )}
-              {request.finish && (
-                <div>
-                  <Label className="text-muted-foreground">Finish</Label>
-                  <div className="font-medium text-foreground mt-1 capitalize">
-                    {request.finish.replace("_", " ")}
-                  </div>
+              {request.allergenInformation && (
+                <div className="md:col-span-2">
+                  <Label className="text-muted-foreground">Allergen Information</Label>
+                  <div className="font-medium text-foreground mt-1">{request.allergenInformation}</div>
                 </div>
               )}
-              {request.dimensions && (request.dimensions.length || request.dimensions.width || request.dimensions.height) && (
+              {request.packagingRequirements && (
+                <div className="md:col-span-2">
+                  <Label className="text-muted-foreground">Packaging Requirements</Label>
+                  <div className="font-medium text-foreground mt-1">{request.packagingRequirements}</div>
+                </div>
+              )}
+              {request.shelfLife && (
                 <div>
-                  <Label className="text-muted-foreground">Dimensions</Label>
+                  <Label className="text-muted-foreground">Shelf Life</Label>
+                  <div className="font-medium text-foreground mt-1">{request.shelfLife}</div>
+                </div>
+              )}
+              {request.storageConditions && (
+                <div>
+                  <Label className="text-muted-foreground">Storage Conditions</Label>
+                  <div className="font-medium text-foreground mt-1">{request.storageConditions}</div>
+                </div>
+              )}
+              {request.certificationsRequired && request.certificationsRequired.length > 0 && (
+                <div className="md:col-span-2">
+                  <Label className="text-muted-foreground">Certifications Required</Label>
                   <div className="font-medium text-foreground mt-1">
-                    {request.dimensions.length && `${request.dimensions.length}mm`}
-                    {request.dimensions.width && ` × ${request.dimensions.width}mm`}
-                    {request.dimensions.height && ` × ${request.dimensions.height}mm`}
+                    {request.certificationsRequired.join(", ")}
                   </div>
-                </div>
-              )}
-              {request.tolerance && (
-                <div>
-                  <Label className="text-muted-foreground">Tolerance</Label>
-                  <div className="font-medium text-foreground mt-1">{request.tolerance}</div>
-                </div>
-              )}
-              {request.weldingRequirements && (
-                <div className="md:col-span-2">
-                  <Label className="text-muted-foreground">Welding Requirements</Label>
-                  <div className="font-medium text-foreground mt-1">{request.weldingRequirements}</div>
-                </div>
-              )}
-              {request.surfaceTreatment && (
-                <div className="md:col-span-2">
-                  <Label className="text-muted-foreground">Surface Treatment</Label>
-                  <div className="font-medium text-foreground mt-1">{request.surfaceTreatment}</div>
                 </div>
               )}
               <div>

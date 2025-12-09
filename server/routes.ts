@@ -679,10 +679,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               {
                 requestNumber: quoteRequest.requestNumber,
                 materialName: quoteRequest.materialName,
-                materialType: quoteRequest.materialType || undefined,
-                materialGrade: quoteRequest.materialGrade || undefined,
-                thickness: quoteRequest.thickness || undefined,
-                finish: quoteRequest.finish || undefined,
                 quantityNeeded: quoteRequest.quantityNeeded,
                 unitOfMeasure: quoteRequest.unitOfMeasure,
                 submitByDate: quoteRequest.submitByDate,
@@ -890,10 +886,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         {
           requestNumber: quoteRequest.requestNumber,
           materialName: quoteRequest.materialName,
-          materialType: quoteRequest.materialType || undefined,
-          materialGrade: quoteRequest.materialGrade || undefined,
-          thickness: quoteRequest.thickness || undefined,
-          finish: quoteRequest.finish || undefined,
           quantityNeeded: quoteRequest.quantityNeeded,
           unitOfMeasure: quoteRequest.unitOfMeasure,
           submitByDate: quoteRequest.submitByDate,
@@ -1925,20 +1917,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Supplier not found" });
       }
 
-      // Return only necessary information for quote submission
+      // Return only necessary information for quote submission (food production fields)
       res.json({
         request: {
           id: request.id,
           requestNumber: request.requestNumber,
+          productName: request.productName,
           materialName: request.materialName,
-          materialType: request.materialType,
-          materialGrade: request.materialGrade,
-          thickness: request.thickness,
-          dimensions: request.dimensions,
-          finish: request.finish,
-          tolerance: request.tolerance,
-          weldingRequirements: request.weldingRequirements,
-          surfaceTreatment: request.surfaceTreatment,
+          productCategory: request.productCategory,
+          productType: request.productType,
+          ingredients: request.ingredients,
+          allergenInformation: request.allergenInformation,
+          nutritionalRequirements: request.nutritionalRequirements,
+          packagingRequirements: request.packagingRequirements,
+          shelfLife: request.shelfLife,
+          storageConditions: request.storageConditions,
+          certificationsRequired: request.certificationsRequired,
+          foodSafetyStandards: request.foodSafetyStandards,
+          materialNotes: request.materialNotes,
           quantityNeeded: request.quantityNeeded,
           unitOfMeasure: request.unitOfMeasure,
           submitByDate: request.submitByDate,

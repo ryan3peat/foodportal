@@ -324,38 +324,6 @@ export default function SupplierApplicationDetail() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Welding & Surface Treatment</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label className="text-muted-foreground">Welding Capabilities</Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {Array.isArray(application.weldingCapabilities) && application.weldingCapabilities.length > 0 ? (
-                  application.weldingCapabilities.map((welding, idx) => (
-                    <Badge key={idx} variant="secondary">{welding}</Badge>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground">None specified</p>
-                )}
-              </div>
-            </div>
-            <div>
-              <Label className="text-muted-foreground">Surface Treatment Options</Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {Array.isArray(application.surfaceTreatmentOptions) && application.surfaceTreatmentOptions.length > 0 ? (
-                  application.surfaceTreatmentOptions.map((treatment, idx) => (
-                    <Badge key={idx} variant="secondary">{treatment}</Badge>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground">None specified</p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
             <CardTitle>Capacity</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

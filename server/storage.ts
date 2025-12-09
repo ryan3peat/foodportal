@@ -311,7 +311,7 @@ export class DatabaseStorage implements IStorage {
     tokenId: string
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      await db.transaction(async (tx) => {
+      await db.transaction(async (tx: any) => {
         // Acquire exclusive row-level lock on the token
         // This prevents concurrent transactions from using the same token
         const [token] = await tx
@@ -589,7 +589,7 @@ export class DatabaseStorage implements IStorage {
 
     // Get all requests and quotes in parallel
     const results = await Promise.all(
-      requestSuppliersData.map(async (rs) => {
+      requestSuppliersData.map(async (rs: RequestSupplier) => {
         const [request] = await db
           .select()
           .from(quoteRequests)
@@ -702,7 +702,13 @@ export class DatabaseStorage implements IStorage {
     const quotes = await this.getSupplierQuotes(requestId);
 
     // Map suppliers with their quotes
-    const suppliersWithQuotes = requestSuppliersData.map(rs => {
+    const suppliersWithQuotes = requestSuppliersData.map((rs: {
+      requestSupplierId: string;
+      supplierId: string | null;
+      supplierName: string | null;
+      email: string | null;
+      emailSentAt: Date | null;
+    }) => {
       const quote = quotes.find(q => q.supplierId === rs.supplierId) || null;
       return {
         id: rs.supplierId!,

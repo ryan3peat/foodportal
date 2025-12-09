@@ -95,7 +95,7 @@ export function validateFileSignature(filePath: string): Promise<boolean> {
     const stream = fs.createReadStream(filePath, { start: 0, end: 8 });
     let buffer = Buffer.alloc(0);
 
-    stream.on('data', (chunk) => {
+    stream.on('data', (chunk: Buffer) => {
       buffer = Buffer.concat([buffer, chunk]);
     });
 

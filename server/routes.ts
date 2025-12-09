@@ -7,7 +7,16 @@ import { sql } from "drizzle-orm";
 import { setupAuth, isAuthenticated } from "./auth";
 import localPassport from "./auth/localAuth";
 import { hashPassword, validatePasswordComplexity } from "./auth/localAuth";
-import { insertUserSchema, insertSupplierSchema, insertSupplierQuoteSchema, insertDocumentRequestSchema, insertSupplierApplicationSchema, insertDemoLeadSchema, demoLeads } from "@shared/schema";
+import {
+  insertUserSchema,
+  insertSupplierSchema,
+  insertSupplierQuoteSchema,
+  insertDocumentRequestSchema,
+  insertSupplierApplicationSchema,
+  insertDemoLeadSchema,
+  demoLeads,
+  type InsertSupplier,
+} from "@shared/schema";
 import { generateAccessToken, generateQuoteSubmissionUrl } from "./email/emailService";
 import { emailService } from "./email/hybridEmailService";
 import { validateQuoteAccessToken } from "./middleware/tokenAuth";
@@ -287,6 +296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/users/:id', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = getUserId(req);
       const currentUser = await getCurrentUser(req);
       
       if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'procurement')) {
@@ -357,6 +367,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = getUserId(req);
       const currentUser = await getCurrentUser(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
       
       if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'procurement')) {
         return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });
@@ -507,6 +520,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = getUserId(req);
       const currentUser = await getCurrentUser(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
 
       if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'procurement')) {
         return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });
@@ -613,6 +629,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = getUserId(req);
       const currentUser = await getCurrentUser(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
       if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'procurement')) {
         return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });
       }
@@ -714,6 +733,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = getUserId(req);
       const currentUser = await getCurrentUser(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
       
       if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'procurement')) {
         return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });
@@ -1327,9 +1349,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 .from(users)
                 .where(sql`${users.role} IN ('admin', 'procurement') AND ${users.active} = true`);
 
-              const adminEmails = adminUsers
-                .filter(u => u.email)
-                .map(u => u.email as string);
+      const adminEmails = adminUsers
+        .filter((u: any) => u.email)
+        .map((u: any) => u.email as string);
 
               // Send email notification for completion
               if (adminEmails.length > 0 && quote.requestId) {
@@ -1675,6 +1697,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = getUserId(req);
       const currentUser = await getCurrentUser(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
       
       if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'procurement')) {
         return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });
@@ -1710,6 +1735,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = getUserId(req);
       const currentUser = await getCurrentUser(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
       
       if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'procurement')) {
         return res.status(403).json({ message: "Forbidden: Admin or procurement access required" });

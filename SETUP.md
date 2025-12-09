@@ -1,4 +1,4 @@
-# Setup Guide for Metal Fabrication Supplier Portal Demo
+# Setup Guide for Food Production Supplier Portal
 
 ## Quick Start
 
@@ -25,11 +25,11 @@ DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:
 1. Install PostgreSQL locally
 2. Create a database:
    ```bash
-   createdb metalfabdemo
+   createdb foodportal
    ```
 3. Create a `.env` file:
    ```env
-   DATABASE_URL=postgresql://postgres:password@localhost:5432/metalfabdemo
+   DATABASE_URL=postgresql://postgres:password@localhost:5432/foodportal
    ```
 4. Run the migrations or execute `supabase_setup.sql`
 

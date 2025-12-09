@@ -32,7 +32,7 @@ const client = postgres(databaseUrl, {
   max: 1, // Limit connection pool for serverless environments
   onnotice: () => {}, // Suppress notices
   connection: {
-    application_name: 'metalfabdemo',
+    application_name: 'foodportal',
   },
   connect_timeout: 30, // 30 second connection timeout (increased for network issues)
   idle_timeout: 20, // 20 second idle timeout

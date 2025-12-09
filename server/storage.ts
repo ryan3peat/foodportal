@@ -760,7 +760,7 @@ export class DatabaseStorage implements IStorage {
     // Debug: Check all quote requests
     const allRequests = await db.select().from(quoteRequests);
     console.log('📊 All quote requests in DB:', allRequests.length);
-    console.log('📊 Quote request statuses:', allRequests.map(r => ({ id: r.id, status: r.status, number: r.requestNumber })));
+    console.log('📊 Quote request statuses:', allRequests.map((r: QuoteRequest) => ({ id: r.id, status: r.status, number: r.requestNumber })));
 
     // Count active quote requests
     const [activeResult] = await db

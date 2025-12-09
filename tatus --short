@@ -1,0 +1,33 @@
+[33mcommit 293b9b9b64398f27f95e425c1634c3ead5b841e2[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: 3peatai <ryan@3peat.ai>
+Date:   Tue Dec 9 14:41:41 2025 +0800
+
+    Email Capabilities
+
+ .env.local                                      |   5 [31m-[m
+ .gitignore                                      |   1 [32m+[m
+ CHECK_EMAIL_STATUS.md                           |  77 [32m++++[m
+ EMAIL_CONFIGURATION.md                          | 231 [32m+++++++++++[m
+ GET_REFRESH_TOKEN_INSTRUCTIONS.md               |  56 [32m+++[m
+ TEST_EMAIL_SETUP.md                             |  40 [32m++[m
+ client/src/App.tsx                              |  29 [32m+[m[31m-[m
+ client/src/components/ContactUsModal.tsx        | 231 [32m+++++++++++[m
+ client/src/components/LeadCaptureModal.tsx      |  13 [32m+[m[31m-[m
+ client/src/lib/demoApiClient.ts                 |  18 [32m+[m[31m-[m
+ client/src/lib/demoSession.ts                   | 527 [32m++++++++++++[m[31m------------[m
+ get-refresh-token.js                            |  87 [32m++++[m
+ get-refresh-token.mjs                           |  68 [32m+++[m
+ package-lock.json                               | 297 [32m+++++++++++++[m
+ package.json                                    |   1 [32m+[m
+ server/auth.ts                                  |  41 [32m+[m[31m-[m
+ server/db.ts                                    | 117 [32m+++[m[31m---[m
+ server/email/documentUploadNotificationEmail.ts |   2 [32m+[m[31m-[m
+ server/email/emailService.ts                    |  12 [32m+[m[31m-[m
+ server/email/googleGmailEmailService.ts         | 179 [32m++++++++[m
+ server/email/hybridEmailService.ts              |  52 [32m++[m[31m-[m
+ server/email/microsoftGraphEmailService.ts      |   8 [32m+[m[31m-[m
+ server/middleware/supplierAuth.ts               |  45 [32m+[m[31m-[m
+ server/middleware/tokenAuth.ts                  |   7 [32m+[m
+ server/routes.ts                                | 110 [32m++++[m[31m-[m
+ server/storage.ts                               |  66 [32m++[m[31m-[m
+ 26 files changed, 1913 insertions(+), 407 deletions(-)

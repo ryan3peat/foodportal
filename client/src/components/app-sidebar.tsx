@@ -17,6 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { motion } from "framer-motion";
+import { useSidebar } from "@/components/ui/sidebar";
+import { RoleToggle } from "@/components/role-toggle";
 
 const adminMenuItems = [
   {
@@ -62,9 +64,17 @@ const supplierMenuItems = [
 export function AppSidebar() {
   const { user } = useAuth();
   const [location] = useLocation();
+  const { isMobile, setOpenMobile } = useSidebar();
   
   const isAdmin = user?.role === 'admin' || user?.role === 'procurement';
   const menuItems = isAdmin ? adminMenuItems : supplierMenuItems;
+
+  // Close sidebar on mobile when link is clicked
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -119,6 +129,11 @@ export function AppSidebar() {
           </div>
         </div>
 
+        {/* Mobile Role Toggle */}
+        <div className="sm:hidden p-4 border-b border-border/70">
+          <RoleToggle />
+        </div>
+
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -138,6 +153,7 @@ export function AppSidebar() {
                     >
                       <Link 
                         href={item.url}
+                        onClick={handleLinkClick}
                         data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
                       >
                         <item.icon className="h-4 w-4" />

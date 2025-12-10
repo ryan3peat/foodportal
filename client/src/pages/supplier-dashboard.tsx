@@ -102,7 +102,7 @@ export default function SupplierDashboard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="grid grid-cols-2 gap-3 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div className="flex items-center gap-2">
             <Package className="h-4 w-4 text-muted-foreground" />
             <span className="text-muted-foreground">
@@ -193,18 +193,18 @@ export default function SupplierDashboard() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         <div>
-          <h1 className="text-4xl font-medium text-foreground" data-testid="text-dashboard-title">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-medium text-foreground" data-testid="text-dashboard-title">
             Supplier Portal
           </h1>
-          <p className="text-muted-foreground mt-2" data-testid="text-welcome-message">
+          <p className="text-sm sm:text-base text-muted-foreground mt-2" data-testid="text-welcome-message">
             Welcome back! Here's an overview of your quote requests.
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <Card 
             className="hover-elevate cursor-pointer transition-all" 
             onClick={() => setActiveTab("ongoing")}
@@ -301,21 +301,27 @@ export default function SupplierDashboard() {
         {/* Quote Requests Tabs */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl font-semibold">Your Quote Requests</CardTitle>
+            <CardTitle className="text-lg sm:text-xl font-semibold">Your Quote Requests</CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="ongoing" data-testid="tab-ongoing">
-                  Ongoing ({ongoingRequests.length})
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 overflow-x-auto">
+                <TabsTrigger value="ongoing" data-testid="tab-ongoing" className="text-xs sm:text-sm">
+                  <span className="hidden sm:inline">Ongoing</span>
+                  <span className="sm:hidden">Ongoing</span>
+                  <span className="ml-1">({ongoingRequests.length})</span>
                 </TabsTrigger>
-                <TabsTrigger value="pending-docs" data-testid="tab-pending-docs">
-                  Pending Docs ({pendingDocumentationRequests.length})
+                <TabsTrigger value="pending-docs" data-testid="tab-pending-docs" className="text-xs sm:text-sm">
+                  <span className="hidden sm:inline">Pending Docs</span>
+                  <span className="sm:hidden">Docs</span>
+                  <span className="ml-1">({pendingDocumentationRequests.length})</span>
                 </TabsTrigger>
-                <TabsTrigger value="final-submitted" data-testid="tab-final-submitted">
-                  Final Submitted ({finalSubmittedRequests.length})
+                <TabsTrigger value="final-submitted" data-testid="tab-final-submitted" className="text-xs sm:text-sm">
+                  <span className="hidden sm:inline">Final Submitted</span>
+                  <span className="sm:hidden">Final</span>
+                  <span className="ml-1">({finalSubmittedRequests.length})</span>
                 </TabsTrigger>
-                <TabsTrigger value="expired" data-testid="tab-expired">
+                <TabsTrigger value="expired" data-testid="tab-expired" className="text-xs sm:text-sm">
                   Expired ({expiredRequests.length})
                 </TabsTrigger>
               </TabsList>

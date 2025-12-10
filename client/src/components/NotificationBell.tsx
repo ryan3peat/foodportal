@@ -115,7 +115,7 @@ export function NotificationBell() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-96 p-0" align="end" data-testid="popover-notifications">
+      <PopoverContent className="w-[calc(100vw-2rem)] sm:w-96 p-0" align="end" data-testid="popover-notifications">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="font-semibold text-foreground">Notifications</h3>
           {unreadCount > 0 && (

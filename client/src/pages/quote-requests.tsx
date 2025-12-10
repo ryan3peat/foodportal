@@ -138,8 +138,8 @@ export default function QuoteRequests() {
   console.log(`[DEBUG] Current statusFilter: "${statusFilter}", Total requests: ${requests.length}, Filtered: ${filteredRequests.length}`);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Quote Requests</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -147,7 +147,7 @@ export default function QuoteRequests() {
           </p>
         </div>
         <Link href="/quote-requests/create">
-          <Button data-testid="button-create-request">
+          <Button data-testid="button-create-request" className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             New Request
           </Button>
@@ -220,34 +220,136 @@ export default function QuoteRequests() {
               )}
             </div>
           ) : (
-            <div className="border border-border rounded-md">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>RFQ Number</TableHead>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Quotes</TableHead>
-                    <TableHead>Submit By</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRequests.map((request) => (
-                    <TableRow 
-                      key={request.id}
-                      data-testid={`row-request-${request.id}`}
-                    >
-                      <TableCell className="font-medium">
-                        <span data-testid={`text-rfq-${request.id}`}>
-                          {request.requestNumber}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium text-sm" data-testid={`text-product-${request.id}`}>
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block border border-border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>RFQ Number</TableHead>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Quotes</TableHead>
+                      <TableHead>Submit By</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredRequests.map((request) => (
+                      <TableRow 
+                        key={request.id}
+                        data-testid={`row-request-${request.id}`}
+                      >
+                        <TableCell className="font-medium">
+                          <span data-testid={`text-rfq-${request.id}`}>
+                            {request.requestNumber}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium text-sm" data-testid={`text-product-${request.id}`}>
+                              {(request as any).productName || request.materialName}
+                            </p>
+                            {(request as any).productCategory && (
+                              <p className="text-xs text-muted-foreground capitalize">
+                                {(request as any).productCategory.replace("_", " ")}
+                              </p>
+                            )}
+                            {(request as any).productType && (
+                              <p className="text-xs text-muted-foreground">
+                                {(request as any).productType}
+                              </p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {request.quantityNeeded} {request.unitOfMeasure}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span 
+                              className="font-medium" 
+                              data-testid={`text-quotes-${request.id}`}
+                            >
+                              {request.quotesReceived ?? 0} / {request.totalSuppliers ?? 0}
+                            </span>
+                            {(request.quotesReceived ?? 0) > 0 && (
+                              <Badge 
+                                variant="outline" 
+                                className="bg-green-500/10 text-green-500 border-green-500/20 text-xs"
+                              >
+                                {request.quotesReceived}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(request.submitByDate), "MMM d, yyyy")}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={`${statusColors[request.status]} uppercase text-xs font-semibold`}
+                            data-testid={`badge-status-${request.id}`}
+                          >
+                            {request.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {format(new Date(request.createdAt), "MMM d, yyyy")}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Link href={`/quote-requests/${request.id}`}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                data-testid={`button-view-${request.id}`}
+                              >
+                                View
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteRequestId(request.id);
+                              }}
+                              data-testid={`button-delete-${request.id}`}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {filteredRequests.map((request) => (
+                  <Card key={request.id} data-testid={`row-request-${request.id}`}>
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm" data-testid={`text-rfq-${request.id}`}>
+                              {request.requestNumber}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className={`${statusColors[request.status]} uppercase text-xs font-semibold`}
+                              data-testid={`badge-status-${request.id}`}
+                            >
+                              {request.status}
+                            </Badge>
+                          </div>
+                          <p className="font-semibold text-base mb-1" data-testid={`text-product-${request.id}`}>
                             {(request as any).productName || request.materialName}
                           </p>
                           {(request as any).productCategory && (
@@ -255,78 +357,68 @@ export default function QuoteRequests() {
                               {(request as any).productCategory.replace("_", " ")}
                             </p>
                           )}
-                          {(request as any).productType && (
-                            <p className="text-xs text-muted-foreground">
-                              {(request as any).productType}
-                            </p>
-                          )}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {request.quantityNeeded} {request.unitOfMeasure}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span 
-                            className="font-medium" 
-                            data-testid={`text-quotes-${request.id}`}
-                          >
-                            {request.quotesReceived ?? 0} / {request.totalSuppliers ?? 0}
-                          </span>
-                          {(request.quotesReceived ?? 0) > 0 && (
-                            <Badge 
-                              variant="outline" 
-                              className="bg-green-500/10 text-green-500 border-green-500/20 text-xs"
-                            >
-                              {request.quotesReceived}
-                            </Badge>
-                          )}
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3 text-sm pt-2 border-t">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Quantity</p>
+                          <p className="font-medium">{request.quantityNeeded} {request.unitOfMeasure}</p>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(request.submitByDate), "MMM d, yyyy")}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={`${statusColors[request.status]} uppercase text-xs font-semibold`}
-                          data-testid={`badge-status-${request.id}`}
-                        >
-                          {request.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {format(new Date(request.createdAt), "MMM d, yyyy")}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link href={`/quote-requests/${request.id}`}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              data-testid={`button-view-${request.id}`}
-                            >
-                              View
-                            </Button>
-                          </Link>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Quotes</p>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium" data-testid={`text-quotes-${request.id}`}>
+                              {request.quotesReceived ?? 0} / {request.totalSuppliers ?? 0}
+                            </span>
+                            {(request.quotesReceived ?? 0) > 0 && (
+                              <Badge 
+                                variant="outline" 
+                                className="bg-green-500/10 text-green-500 border-green-500/20 text-xs"
+                              >
+                                {request.quotesReceived}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Submit By</p>
+                          <p className="font-medium">{format(new Date(request.submitByDate), "MMM d, yyyy")}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Created</p>
+                          <p className="font-medium">{format(new Date(request.createdAt), "MMM d, yyyy")}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 pt-2 border-t">
+                        <Link href={`/quote-requests/${request.id}`} className="flex-1">
                           <Button
-                            variant="ghost"
+                            variant="default"
                             size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteRequestId(request.id);
-                            }}
-                            data-testid={`button-delete-${request.id}`}
+                            className="w-full"
+                            data-testid={`button-view-${request.id}`}
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            View
                           </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                        </Link>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteRequestId(request.id);
+                          }}
+                          data-testid={`button-delete-${request.id}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
           )}
 
           {filteredRequests.length > 0 && (

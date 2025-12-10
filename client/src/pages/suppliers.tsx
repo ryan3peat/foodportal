@@ -128,17 +128,17 @@ export default function Suppliers() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold" data-testid="text-page-title">
+          <h1 className="text-2xl sm:text-3xl font-semibold" data-testid="text-page-title">
             Supplier Management
           </h1>
-          <p className="text-secondary mt-1">
+          <p className="text-secondary mt-1 text-sm sm:text-base">
             Manage your supplier directory and relationships
           </p>
         </div>
-        <Button onClick={handleAddClick} data-testid="button-add-supplier">
+        <Button onClick={handleAddClick} data-testid="button-add-supplier" className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Add Supplier
         </Button>
@@ -169,7 +169,7 @@ export default function Suppliers() {
               value={statusFilter}
               onValueChange={setStatusFilter}
             >
-              <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
+              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -181,88 +181,172 @@ export default function Suppliers() {
           </div>
 
           {filteredSuppliers && filteredSuppliers.length > 0 ? (
-            <div className="border rounded-md">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Supplier</TableHead>
-                    <TableHead>Contact Person</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredSuppliers.map((supplier) => (
-                    <TableRow key={supplier.id} data-testid={`row-supplier-${supplier.id}`}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-secondary" />
-                          <div>
-                            <div className="font-medium" data-testid={`text-supplier-name-${supplier.id}`}>
-                              {supplier.supplierName}
-                            </div>
-                            {supplier.certifications && supplier.certifications.length > 0 && (
-                              <div className="flex gap-1 mt-1">
-                                {supplier.certifications.slice(0, 2).map((cert, idx) => (
-                                  <Badge key={idx} variant="outline" className="text-xs">
-                                    {cert}
-                                  </Badge>
-                                ))}
-                                {supplier.certifications.length > 2 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    +{supplier.certifications.length - 2}
-                                  </Badge>
-                                )}
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Supplier</TableHead>
+                      <TableHead>Contact Person</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSuppliers.map((supplier) => (
+                      <TableRow key={supplier.id} data-testid={`row-supplier-${supplier.id}`}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-secondary" />
+                            <div>
+                              <div className="font-medium" data-testid={`text-supplier-name-${supplier.id}`}>
+                                {supplier.supplierName}
                               </div>
-                            )}
+                              {supplier.certifications && supplier.certifications.length > 0 && (
+                                <div className="flex gap-1 mt-1">
+                                  {supplier.certifications.slice(0, 2).map((cert, idx) => (
+                                    <Badge key={idx} variant="outline" className="text-xs">
+                                      {cert}
+                                    </Badge>
+                                  ))}
+                                  {supplier.certifications.length > 2 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{supplier.certifications.length - 2}
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell data-testid={`text-contact-person-${supplier.id}`}>
+                          {supplier.contactPerson}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-3 w-3 text-secondary" />
+                            <span className="text-sm" data-testid={`text-email-${supplier.id}`}>
+                              {supplier.email}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={supplier.active ? "default" : "outline"}
+                            data-testid={`badge-status-${supplier.id}`}
+                          >
+                            {supplier.active ? "Active" : "Inactive"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleEditClick(supplier)}
+                              data-testid={`button-edit-${supplier.id}`}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleDeleteClick(supplier)}
+                              data-testid={`button-delete-${supplier.id}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {filteredSuppliers.map((supplier) => (
+                  <Card key={supplier.id} data-testid={`row-supplier-${supplier.id}`}>
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Building2 className="h-4 w-4 text-secondary flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold text-base truncate" data-testid={`text-supplier-name-${supplier.id}`}>
+                                {supplier.supplierName}
+                              </div>
+                              {supplier.certifications && supplier.certifications.length > 0 && (
+                                <div className="flex gap-1 mt-1 flex-wrap">
+                                  {supplier.certifications.slice(0, 2).map((cert, idx) => (
+                                    <Badge key={idx} variant="outline" className="text-xs">
+                                      {cert}
+                                    </Badge>
+                                  ))}
+                                  {supplier.certifications.length > 2 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{supplier.certifications.length - 2}
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell data-testid={`text-contact-person-${supplier.id}`}>
-                        {supplier.contactPerson}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-3 w-3 text-secondary" />
-                          <span className="text-sm" data-testid={`text-email-${supplier.id}`}>
-                            {supplier.email}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
                         <Badge
                           variant={supplier.active ? "default" : "outline"}
                           data-testid={`badge-status-${supplier.id}`}
                         >
                           {supplier.active ? "Active" : "Inactive"}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleEditClick(supplier)}
-                            data-testid={`button-edit-${supplier.id}`}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleDeleteClick(supplier)}
-                            data-testid={`button-delete-${supplier.id}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                      </div>
+                      
+                      <div className="space-y-2 pt-2 border-t">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Contact Person</p>
+                          <p className="text-sm font-medium" data-testid={`text-contact-person-${supplier.id}`}>
+                            {supplier.contactPerson}
+                          </p>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Email</p>
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-3 w-3 text-secondary" />
+                            <span className="text-sm truncate" data-testid={`text-email-${supplier.id}`}>
+                              {supplier.email}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 pt-2 border-t">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleEditClick(supplier)}
+                          className="flex-1"
+                          data-testid={`button-edit-${supplier.id}`}
+                        >
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteClick(supplier)}
+                          data-testid={`button-delete-${supplier.id}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <FileText className="h-12 w-12 text-secondary mb-4" />

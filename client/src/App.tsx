@@ -140,12 +140,20 @@ function AppContent() {
         <div className="flex h-screen w-full">
           <AppSidebar />
           <div className="flex flex-col flex-1">
-            <header className="flex items-center justify-between p-4 border-b border-border">
+            <header className="flex items-center justify-between p-3 sm:p-4 border-b border-border gap-2">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
-              <div className="flex items-center gap-2">
-                <RoleToggle />
-                <Button variant="outline" onClick={() => setContactModalOpen(true)}>
-                  Contact Us
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-1 justify-end">
+                <div className="hidden sm:block">
+                  <RoleToggle />
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setContactModalOpen(true)}
+                  size="sm"
+                  className="text-xs sm:text-sm"
+                >
+                  <span className="hidden sm:inline">Contact Us</span>
+                  <span className="sm:hidden">Contact</span>
                 </Button>
                 {isAdmin && <NotificationBell />}
               </div>

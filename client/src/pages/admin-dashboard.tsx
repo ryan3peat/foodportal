@@ -41,15 +41,15 @@ export default function AdminDashboard() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         <div>
-          <h1 className="text-4xl font-medium text-foreground">Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-medium text-foreground">Admin Dashboard</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-2">
             Welcome back, {user?.firstName || 'Admin'}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {[
             {
               href: "/quote-requests",
@@ -148,9 +148,9 @@ export default function AdminDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold">Recent Quote Requests</CardTitle>
-            </CardHeader>
+                    <CardHeader>
+                      <CardTitle className="text-lg sm:text-xl font-semibold">Recent Quote Requests</CardTitle>
+                    </CardHeader>
             <CardContent>
               {requestsLoading ? (
                 <div className="flex justify-center py-12">
@@ -205,7 +205,7 @@ export default function AdminDashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl font-semibold">Quick Actions</CardTitle>
+              <CardTitle className="text-lg sm:text-xl font-semibold">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
